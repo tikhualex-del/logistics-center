@@ -104,15 +104,19 @@
     {
       "id": "FEAT-006",
       "name": "phase-0-finalize-fix-reviewer-blockers",
-      "status": "in_progress",
+      "status": "done",
       "current_version": 1,
-      "current_step": "frontend-implementer",
-      "last_verdict": "pending",
+      "current_step": "completed",
+      "last_verdict": "approve",
       "task_ids": [],
       "history": [
         {
           "version": 1,
           "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
         }
       ]
     }

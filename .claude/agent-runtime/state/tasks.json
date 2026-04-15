@@ -10,6 +10,7 @@
           "name": "Git & репозиторий",
           "role": "backend-implementer",
           "status": "done",
+          "verified_at": "2026-04-15",
           "depends_on": [],
           "description": "git init, .gitignore, README, перенос Documentation/, CLAUDE.md в корень, initial commit"
         },
@@ -18,6 +19,7 @@
           "name": "Backend scaffold",
           "role": "backend-implementer",
           "status": "done",
+          "verified_at": "2026-04-15",
           "depends_on": [
             "0.1"
           ],
@@ -28,6 +30,7 @@
           "name": "Docker + БД",
           "role": "backend-implementer",
           "status": "done",
+          "verified_at": "2026-04-15",
           "depends_on": [
             "0.1"
           ],
@@ -38,6 +41,7 @@
           "name": "Frontend scaffold",
           "role": "frontend-implementer",
           "status": "done",
+          "verified_at": "2026-04-15",
           "depends_on": [
             "0.1"
           ],

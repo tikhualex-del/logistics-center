@@ -32,10 +32,10 @@
       "result": "pending"
     },
     "FEAT-006": {
-      "current_step": "frontend-implementer",
-      "status": "in_progress",
+      "current_step": "completed",
+      "status": "done",
       "version": 1,
-      "result": "pending"
+      "result": "approve"
     }
   }
 }
