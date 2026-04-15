@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp documentation/CLAUDE.md CLAUDE.md)",
+      "Bash(rm documentation/CLAUDE.md)"
+    ]
+  }
+}
