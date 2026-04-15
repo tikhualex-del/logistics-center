@@ -1,0 +1,964 @@
+{
+  "phases": [
+    {
+      "id": "phase-0",
+      "title": "Bootstrap проекта",
+      "deliverable": "`npm run start:dev` (backend), `npm run dev` (frontend), БД подключается, пустое приложение запускается.",
+      "tasks": [
+        {
+          "id": "0.1",
+          "name": "Git & репозиторий",
+          "role": "backend-implementer",
+          "status": "done",
+          "depends_on": [],
+          "description": "git init, .gitignore, README, перенос Documentation/, CLAUDE.md в корень, initial commit"
+        },
+        {
+          "id": "0.2",
+          "name": "Backend scaffold",
+          "role": "backend-implementer",
+          "status": "done",
+          "depends_on": [
+            "0.1"
+          ],
+          "description": "nest new, tsconfig strict, установка всех зависимостей (prisma, swagger, jwt, bull, pino и т.д.), .env.example, ESLint+Prettier"
+        },
+        {
+          "id": "0.3",
+          "name": "Docker + БД",
+          "role": "backend-implementer",
+          "status": "done",
+          "depends_on": [
+            "0.1"
+          ],
+          "description": "docker-compose.yml (PostgreSQL 16 + Redis), prisma init, DATABASE_URL"
+        },
+        {
+          "id": "0.4",
+          "name": "Frontend scaffold",
+          "role": "frontend-implementer",
+          "status": "done",
+          "depends_on": [
+            "0.1"
+          ],
+          "description": "Vite+React+TS, tailwind, shadcn/ui, zustand, tanstack-query, react-hook-form+zod, react-router, axios, socket.io-client, .env"
+        },
+        {
+          "id": "0.5",
+          "name": "Структура папок",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2",
+            "0.4"
+          ],
+          "description": "Создать полное дерево каталогов backend/src/modules/*, frontend/src/pages/*, и т.д."
+        }
+      ]
+    },
+    {
+      "id": "phase-1",
+      "title": "БД и инфраструктура",
+      "deliverable": "Backend стартует, БД со всей схемой, health отвечает, Swagger UI, логи структурированные, requestId на всех запросах.",
+      "tasks": [
+        {
+          "id": "1.1",
+          "name": "Prisma-схема (все таблицы)",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.3"
+          ],
+          "description": "companies, users, couriers, dispatchers, zones, orders, order_status_history, routes, route_points, payment_rule_versions, payments, payment_recalculations, audit_logs, integrations, integration_events, company_features. Все с company_id, uuid, timestamps. Первая миграция"
+        },
+        {
+          "id": "1.2",
+          "name": "PrismaService + tenant isolation",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.1"
+          ],
+          "description": "prisma.service.ts (lifecycle), prisma.module.ts (global), автофильтрация по company_id"
+        },
+        {
+          "id": "1.3a",
+          "name": "Exception filter",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "Глобальный фильтр, формат ответа по API conventions, requestId в ошибках"
+        },
+        {
+          "id": "1.3b",
+          "name": "Request ID interceptor",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "Генерация/чтение X-Request-ID, прокидка в контекст, возврат в response header"
+        },
+        {
+          "id": "1.3c",
+          "name": "Response envelope interceptor",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "Обёртка всех ответов в { data, meta: { requestId, timestamp } }"
+        },
+        {
+          "id": "1.3d",
+          "name": "Validation pipe",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "Глобальный pipe на class-validator"
+        },
+        {
+          "id": "1.3e",
+          "name": "Structured logging (Pino)",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "nestjs-pino, requestId, companyId, level, timestamp, context в каждой записи"
+        },
+        {
+          "id": "1.3f",
+          "name": "Rate limiting",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "@nestjs/throttler глобально на публичные эндпоинты"
+        },
+        {
+          "id": "1.4",
+          "name": "Health endpoints",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.2"
+          ],
+          "description": "GET /health (liveness), GET /health/ready (DB + Redis check)"
+        },
+        {
+          "id": "1.5",
+          "name": "Event constants",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "events.constants.ts — все доменные события из CLAUDE.md §3"
+        },
+        {
+          "id": "1.6",
+          "name": "Swagger setup",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "/api/docs, JWT auth support в Swagger UI"
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Auth и пользователи",
+      "deliverable": "Полный auth flow (register → login → refresh → logout). RBAC работает. Tenant isolation.",
+      "tasks": [
+        {
+          "id": "2.1a",
+          "name": "Auth controller",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.2"
+          ],
+          "description": "POST register, login, refresh, logout"
+        },
+        {
+          "id": "2.1b",
+          "name": "Auth service",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.2"
+          ],
+          "description": "Хеширование пароля (bcrypt), валидация, генерация JWT (access 15min + refresh 30d в httpOnly cookie)"
+        },
+        {
+          "id": "2.1c",
+          "name": "JWT + Refresh стратегии",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.1b"
+          ],
+          "description": "passport-jwt стратегия (Bearer), refresh стратегия (cookie)"
+        },
+        {
+          "id": "2.1d",
+          "name": "Auth DTOs",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "register.dto.ts, login.dto.ts с class-validator"
+        },
+        {
+          "id": "2.2a",
+          "name": "JwtAuthGuard",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.1c"
+          ],
+          "description": "Валидация JWT, прикрепление user к request"
+        },
+        {
+          "id": "2.2b",
+          "name": "TenantGuard",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.2a"
+          ],
+          "description": "Глобальная проверка req.user.companyId"
+        },
+        {
+          "id": "2.2c",
+          "name": "RolesGuard",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.2a"
+          ],
+          "description": "Проверка role по @Roles() декоратору"
+        },
+        {
+          "id": "2.2d",
+          "name": "PermissionsGuard",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.2a"
+          ],
+          "description": "Проверка permissions по @RequirePermission(), data-driven матрица"
+        },
+        {
+          "id": "2.3",
+          "name": "Users module",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.2d"
+          ],
+          "description": "GET /me, GET / (list, admin), POST / (create, admin), PATCH /:id (update, admin). Всегда фильтр по companyId"
+        },
+        {
+          "id": "2.4",
+          "name": "Companies module",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.2"
+          ],
+          "description": "companies.service.ts — CRUD, feature flags. FeatureFlagsService.isEnabled(flag, companyId)"
+        },
+        {
+          "id": "2.5",
+          "name": "Декораторы",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "@CurrentUser(), @Roles(), @RequirePermission(), @Public()"
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Основные домены",
+      "deliverable": "Все CRUD работают. State machines валидируют переходы. Routing через Yandex/mock. Audit trail.",
+      "tasks": [
+        {
+          "id": "3.1",
+          "name": "Zones module",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.3"
+          ],
+          "description": "CRUD зон (admin), GeoJSON polygon, color, base rate"
+        },
+        {
+          "id": "3.2a",
+          "name": "Orders CRUD",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.3"
+          ],
+          "description": "POST, GET list (filters), GET /:id, PATCH /:id"
+        },
+        {
+          "id": "3.2b",
+          "name": "Orders state machine",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2a"
+          ],
+          "description": "canTransition(), InvalidStateTransitionException, логирование в order_status_history + audit_logs"
+        },
+        {
+          "id": "3.2c",
+          "name": "Orders events",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2b"
+          ],
+          "description": "Emit order.created, order.status-changed"
+        },
+        {
+          "id": "3.3a",
+          "name": "Couriers CRUD",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.3"
+          ],
+          "description": "GET list, GET /:id, PATCH /:id/status (online/offline), PATCH /:id/location (GPS)"
+        },
+        {
+          "id": "3.3b",
+          "name": "Couriers events",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.3a"
+          ],
+          "description": "Emit courier.location-updated"
+        },
+        {
+          "id": "3.4a",
+          "name": "RoutingProvider interface",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.2"
+          ],
+          "description": "routing-provider.interface.ts — buildRoute, calculateDistance, geocode"
+        },
+        {
+          "id": "3.4b",
+          "name": "YandexRoutingProvider",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.4a"
+          ],
+          "description": "Реализация через Yandex Maps API (или mock для dev)"
+        },
+        {
+          "id": "3.4c",
+          "name": "Routing service + controller",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.4b"
+          ],
+          "description": "POST /routes/build, GET /routes, GET /:id, PATCH /:id. State machine: draft → planned → in_progress → completed/cancelled"
+        },
+        {
+          "id": "3.4d",
+          "name": "Routing events",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.4c"
+          ],
+          "description": "Emit route.built, route.updated, route.cancelled"
+        },
+        {
+          "id": "3.5",
+          "name": "Audit module",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.5"
+          ],
+          "description": "audit.service.ts — подписка на доменные события, запись в audit_logs. GET /audit-logs (admin). Append-only"
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "title": "Бизнес-логика",
+      "deliverable": "Расчёт выплат end-to-end. CRM пушит заказы и получает webhooks. Уведомления через WS.",
+      "tasks": [
+        {
+          "id": "4.1a",
+          "name": "Payment rules CRUD",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.1"
+          ],
+          "description": "POST, GET list, PATCH (→ новая версия). Типы: zone rate, per-km, per-order, bonus, penalty, minimum guarantee. Версионирование"
+        },
+        {
+          "id": "4.1b",
+          "name": "Payment calculation engine",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "4.1a"
+          ],
+          "description": "POST /payments/calculate — применение всех active rules к маршрутам/заказам курьера. Append-only запись с JSON breakdown"
+        },
+        {
+          "id": "4.1c",
+          "name": "Payments CRUD + state machine",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "4.1b"
+          ],
+          "description": "GET /payments, GET /:id. State: draft → calculated → approved → paid → disputed. Events: payment.calculated, payment.approved"
+        },
+        {
+          "id": "4.2a",
+          "name": "Inbound API (CRM → LC)",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2a"
+          ],
+          "description": "POST /integrations/orders. Idempotency-Key, external_id mapping, strict validation"
+        },
+        {
+          "id": "4.2b",
+          "name": "Outbound webhooks (LC → CRM)",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2c"
+          ],
+          "description": "Регистрация webhooks, HMAC-SHA256 подпись, retry (30s→2m→10m→30m→2h, max 5). Bull queue. Лог в integration_events"
+        },
+        {
+          "id": "4.3",
+          "name": "Notifications module",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2c"
+          ],
+          "description": "Внутренние уведомления (web). Алерты: new order, status change, route change. Доставка через Socket.io"
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "title": "Real-time",
+      "deliverable": "GPS курьеров в реальном времени. Webhooks асинхронно с retry.",
+      "tasks": [
+        {
+          "id": "5.1a",
+          "name": "WebSocket gateway",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.3b"
+          ],
+          "description": "Socket.io gateway, JWT auth, rooms per company (tenant isolation)"
+        },
+        {
+          "id": "5.1b",
+          "name": "WS events",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "5.1a"
+          ],
+          "description": "courier:location_updated, order:status_changed, route:updated, alert:new"
+        },
+        {
+          "id": "5.2",
+          "name": "Bull queues",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.3"
+          ],
+          "description": "webhook-delivery queue (retries), payment-calculation queue. Опционально Bull Board на /admin/queues"
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "title": "Frontend база",
+      "deliverable": "Login/register работает. Layout с role-based навигацией. API-клиент настроен.",
+      "tasks": [
+        {
+          "id": "6.1",
+          "name": "Структура и конфиг",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "0.4"
+          ],
+          "description": "Финальная структура src/ (api, components, features, hooks, store, pages, lib)"
+        },
+        {
+          "id": "6.2a",
+          "name": "Login page",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.1"
+          ],
+          "description": "Страница /login с формой"
+        },
+        {
+          "id": "6.2b",
+          "name": "Register page",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.1"
+          ],
+          "description": "Страница /register с формой"
+        },
+        {
+          "id": "6.2c",
+          "name": "Auth store + interceptors",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2a"
+          ],
+          "description": "Zustand store (token, user, role, permissions). Axios interceptor: Bearer, 401→refresh→retry"
+        },
+        {
+          "id": "6.2d",
+          "name": "Protected routes",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2c"
+          ],
+          "description": "ProtectedRoute wrapper, redirect для неавторизованных"
+        },
+        {
+          "id": "6.3a",
+          "name": "Sidebar navigation",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2d"
+          ],
+          "description": "Карта, Курьеры, Выплаты, Настройки — роль-based видимость"
+        },
+        {
+          "id": "6.3b",
+          "name": "Top bar",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.3a"
+          ],
+          "description": "Date picker, search, alerts badge"
+        },
+        {
+          "id": "6.3c",
+          "name": "usePermissions hook",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2c"
+          ],
+          "description": "can('action') — условный рендер по правам"
+        },
+        {
+          "id": "6.4",
+          "name": "API layer (axios + TanStack Query)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2c"
+          ],
+          "description": "Axios client (baseURL, auth interceptor, requestId), TanStack Query provider, хуки: useOrders, useCouriers, useRoutes и т.д."
+        }
+      ]
+    },
+    {
+      "id": "phase-7",
+      "title": "Dispatcher UI",
+      "deliverable": "Диспетчер видит заказы на карте, строит маршруты, назначает курьеров, видит live-позиции.",
+      "tasks": [
+        {
+          "id": "7.1a",
+          "name": "Yandex Maps интеграция",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Подключение Yandex Maps JS API, базовый рендер карты"
+        },
+        {
+          "id": "7.1b",
+          "name": "Маркеры заказов",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.1a"
+          ],
+          "description": "Заказы как точки на карте, цвет по статусу, клик → подсветка в списке"
+        },
+        {
+          "id": "7.1c",
+          "name": "Полигоны зон",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.1a"
+          ],
+          "description": "Зоны как цветные полигоны на карте"
+        },
+        {
+          "id": "7.1d",
+          "name": "Слои (routes, couriers)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.1a"
+          ],
+          "description": "Toggle-переключатели для маршрутов и курьеров"
+        },
+        {
+          "id": "7.1e",
+          "name": "Список заказов (правая панель)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Скроллируемый список, статус, адрес, time slot. Клик → подсветка на карте. Drag & drop назначение"
+        },
+        {
+          "id": "7.1f",
+          "name": "Top bar (дата, поиск, фильтры)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.3b"
+          ],
+          "description": "Date picker (по умолчанию сегодня), поиск по номеру/адресу, фильтр по статусу/слоту"
+        },
+        {
+          "id": "7.2a",
+          "name": "Построение маршрутов",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.1b"
+          ],
+          "description": "Кнопка \"Построить маршруты\" → POST /routes/build, визуализация polyline"
+        },
+        {
+          "id": "7.2b",
+          "name": "Редактирование маршрутов",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.2a"
+          ],
+          "description": "Drag-n-drop точек, добавление/удаление заказов из маршрута"
+        },
+        {
+          "id": "7.2c",
+          "name": "Назначение маршрута курьеру",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.2a"
+          ],
+          "description": "Dropdown или drag-drop, индикатор статуса маршрута"
+        },
+        {
+          "id": "7.3a",
+          "name": "Socket.io подключение",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "5.1b"
+          ],
+          "description": "Подключение при mount, JWT auth, подписка на события компании"
+        },
+        {
+          "id": "7.3b",
+          "name": "Live-позиции курьеров",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.3a",
+            "7.1d"
+          ],
+          "description": "Движущиеся маркеры курьеров на карте"
+        },
+        {
+          "id": "7.3c",
+          "name": "Live-обновления заказов",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.3a"
+          ],
+          "description": "Автообновление списка и маркеров при смене статуса"
+        },
+        {
+          "id": "7.3d",
+          "name": "Алерты (toast + badge)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.3a"
+          ],
+          "description": "Тост-уведомления о новых заказах/изменениях"
+        }
+      ]
+    },
+    {
+      "id": "phase-8",
+      "title": "Остальные страницы",
+      "deliverable": "Все MVP-страницы функциональны. Админ управляет пользователями, правилами выплат, настройками.",
+      "tasks": [
+        {
+          "id": "8.1a",
+          "name": "Couriers — таблица/список",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Имя, статус (online/offline), кол-во заказов, локация. Цветовая кодировка"
+        },
+        {
+          "id": "8.1b",
+          "name": "Couriers — детальная карточка",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "8.1a"
+          ],
+          "description": "Клик → статистика, toggle online/offline"
+        },
+        {
+          "id": "8.2a",
+          "name": "Payment rules — конструктор",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Визуальные блоки [CONDITION] → [ACTION], типы правил, кнопка \"Симулировать\""
+        },
+        {
+          "id": "8.2b",
+          "name": "Payments — список и детали",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "8.2a"
+          ],
+          "description": "Таблица: курьер, период, сумма, статус, breakdown. Клик → детализация. Approve/dispute"
+        },
+        {
+          "id": "8.3",
+          "name": "User management (admin)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Список пользователей с ролями, создание, редактирование, деактивация"
+        },
+        {
+          "id": "8.4",
+          "name": "Company settings (admin)",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.4"
+          ],
+          "description": "Профиль компании, integration settings (API keys, webhook URLs), feature flags"
+        }
+      ]
+    },
+    {
+      "id": "phase-9",
+      "title": "Тесты",
+      "deliverable": "Критические пути покрыты тестами. CI может запустить полный suite.",
+      "tasks": [
+        {
+          "id": "9.1a",
+          "name": "Auth flow tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.1b"
+          ],
+          "description": "register, login, refresh, token expiration"
+        },
+        {
+          "id": "9.1b",
+          "name": "Tenant isolation tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "1.2"
+          ],
+          "description": "Cross-tenant data leak prevention (CRITICAL)"
+        },
+        {
+          "id": "9.1c",
+          "name": "State machine tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "3.2b",
+            "3.4c",
+            "4.1c"
+          ],
+          "description": "Order, route, payment — valid + invalid transitions"
+        },
+        {
+          "id": "9.1d",
+          "name": "Payment calculation tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "4.1b"
+          ],
+          "description": "Rule application, edge cases, rounding"
+        },
+        {
+          "id": "9.1e",
+          "name": "RBAC tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "2.2d"
+          ],
+          "description": "Permission checks для всех ролей"
+        },
+        {
+          "id": "9.1f",
+          "name": "Integration API tests",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "4.2a"
+          ],
+          "description": "Idempotency, external ID mapping, validation"
+        },
+        {
+          "id": "9.2a",
+          "name": "Frontend auth tests",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.2c"
+          ],
+          "description": "Login, refresh, redirect"
+        },
+        {
+          "id": "9.2b",
+          "name": "usePermissions tests",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "6.3c"
+          ],
+          "description": "Hook logic для всех ролей"
+        },
+        {
+          "id": "9.2c",
+          "name": "Payment rules constructor tests",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "8.2a"
+          ],
+          "description": "Form logic, validation"
+        },
+        {
+          "id": "9.2d",
+          "name": "Order status display tests",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "7.1b"
+          ],
+          "description": "Корректное отображение статусов"
+        }
+      ]
+    },
+    {
+      "id": "phase-10",
+      "title": "CI/CD и деплой",
+      "deliverable": "Push to main → автодеплой. Полный CI pipeline.",
+      "tasks": [
+        {
+          "id": "10.1",
+          "name": "GitHub Actions CI",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "9.1a"
+          ],
+          "description": "ci.yml: lint + test + build на каждый push/PR"
+        },
+        {
+          "id": "10.2",
+          "name": "Railway setup",
+          "role": "backend-implementer",
+          "status": "created",
+          "depends_on": [
+            "10.1"
+          ],
+          "description": "PostgreSQL, Redis, backend service, env vars. deploy-backend.yml"
+        },
+        {
+          "id": "10.3",
+          "name": "Vercel setup",
+          "role": "frontend-implementer",
+          "status": "created",
+          "depends_on": [
+            "10.1"
+          ],
+          "description": "Frontend deploy, env vars. deploy-frontend.yml"
+        }
+      ]
+    }
+  ],
+  "dependency_graph": "phase-0 ──→ phase-1 ──→ phase-2 ──→ phase-3 ──→ phase-4\n                                        │            │\n                                        ├──→ phase-5 │ (параллельно)\n                                        │            │\nphase-6 ◄── phase-2 ────────────────────┘            │\n    │                                                 │\n    ├──→ phase-7 ◄── phase-3 + phase-5               │\n    │                                                 │\n    └──→ phase-8 ◄── phase-4 ────────────────────────┘\n              │\n              └──→ phase-9 ──→ phase-10"
+}

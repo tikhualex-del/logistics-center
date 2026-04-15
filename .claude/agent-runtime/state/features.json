@@ -1,3 +1,120 @@
 {
-  "features": []
+  "features": [
+    {
+      "id": "FEAT-001",
+      "name": "git-and-repository-setup",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.1"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-002",
+      "name": "backend-scaffold",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.2"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-003",
+      "name": "docker-and-database-setup",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-004",
+      "name": "frontend-scaffold",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-005",
+      "name": "health-endpoints-liveness-readiness",
+      "status": "created",
+      "current_version": 1,
+      "current_step": "planner",
+      "last_verdict": "pending",
+      "task_ids": [
+        "1.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-006",
+      "name": "phase-0-finalize-fix-reviewer-blockers",
+      "status": "in_progress",
+      "current_version": 1,
+      "current_step": "frontend-implementer",
+      "last_verdict": "pending",
+      "task_ids": [],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        }
+      ]
+    }
+  ]
 }

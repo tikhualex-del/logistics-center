@@ -1,0 +1,25 @@
+// Logistics Center — Prisma Schema
+// All tables (except companies) must contain company_id for multi-tenant isolation.
+// See CLAUDE.md Section 5 for multi-tenant rules.
+// See CLAUDE.md Section 10 for migration discipline.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// TENANT ROOT
+// ============================================================
+
+model Company {
+  id         String   @id @default(uuid())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("companies")
+}

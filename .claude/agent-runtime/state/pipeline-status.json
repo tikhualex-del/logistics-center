@@ -1,4 +1,41 @@
 {
-  "active_feature": null,
-  "pipelines": {}
+  "active_feature": "FEAT-006",
+  "pipelines": {
+    "FEAT-001": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-002": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-003": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-004": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-005": {
+      "current_step": "planner",
+      "status": "created",
+      "version": 1,
+      "result": "pending"
+    },
+    "FEAT-006": {
+      "current_step": "frontend-implementer",
+      "status": "in_progress",
+      "version": 1,
+      "result": "pending"
+    }
+  }
 }

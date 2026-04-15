@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(cp documentation/CLAUDE.md CLAUDE.md)",
-      "Bash(rm documentation/CLAUDE.md)"
+      "Bash(rm documentation/CLAUDE.md)",
+      "Bash(node:*)",
+      "Bash(npx --yes @nestjs/cli@latest --version)",
+      "Bash(npm --version)",
+      "Bash(npx @nestjs/cli@latest new backend --package-manager npm --skip-git --strict)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:password@localhost:5432/logistics_center?schema=public\" npx prisma generate)",
+      "Bash(npm run:*)",
+      "Bash(npm view *)",
+      "Bash(npx eslint *)"
     ]
   }
 }
