@@ -1,5 +1,7 @@
 import { isAxiosError } from 'axios'
+import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
+import i18n from '@/i18n'
 import { QUERY_KEYS } from '@/api/query-keys'
 import type { ApiError } from '@/api/http-client'
 import type { Order, OrderStatus, Route } from '@/api'
@@ -21,6 +23,7 @@ const ROUTABLE_STATUSES: readonly OrderStatus[] = [
 ]
 
 export function RouteBuildControls(): React.ReactElement {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const {
     selectedDate,
@@ -103,13 +106,13 @@ export function RouteBuildControls(): React.ReactElement {
   if (isError) {
     return (
       <RouteBuildShell>
-        <p className="text-xs font-medium text-foreground">Routes unavailable</p>
+        <p className="text-xs font-medium text-foreground">{t('routes.unavailable')}</p>
         <button
           type="button"
           onClick={() => void refetch()}
           className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
         >
-          Reload orders
+          {t('routes.reloadOrders')}
         </button>
       </RouteBuildShell>
     )
@@ -120,14 +123,14 @@ export function RouteBuildControls(): React.ReactElement {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Route builder
+            {t('routes.builderTitle')}
           </p>
           <p className="mt-1 text-sm font-semibold text-foreground">
-            {orderIds.length} orders ready
+            {t('routes.ordersReady', { count: orderIds.length })}
           </p>
         </div>
         <span className="rounded-full border border-border bg-background px-2 py-1 text-[10px] font-medium text-muted-foreground">
-          Auto
+          {t('routes.auto')}
         </span>
       </div>
 
@@ -143,23 +146,25 @@ export function RouteBuildControls(): React.ReactElement {
             : 'cursor-not-allowed bg-muted text-muted-foreground',
         )}
       >
-        {buildRouteMutation.isPending ? 'Building route...' : 'Build routes'}
+        {buildRouteMutation.isPending ? t('routes.building') : t('routes.build')}
       </button>
 
       <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-        Builds a draft route from the currently visible non-terminal orders.
-        {selectedOrder ? ` Starts with ${getOrderDisplayId(selectedOrder)}.` : ''}
+        {t('routes.autoHint')}
+        {selectedOrder
+          ? ` ${t('routes.startsWith', { id: getOrderDisplayId(selectedOrder) })}`
+          : ''}
       </p>
 
       {orderIds.length < 2 && (
         <p className="mt-2 rounded-md bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-700">
-          At least two active visible orders are required.
+          {t('routes.minOrders')}
         </p>
       )}
 
       {buildRouteMutation.isSuccess && (
         <p className="mt-2 rounded-md bg-green-500/10 px-2 py-1.5 text-[11px] text-green-700">
-          Route built. Polyline layer is enabled.
+          {t('routes.builtSuccess')}
         </p>
       )}
 
@@ -214,5 +219,5 @@ function getRouteBuildError(error: unknown): string {
     return error.message
   }
 
-  return 'Route build failed.'
+  return i18n.t('routes.buildFailed')
 }

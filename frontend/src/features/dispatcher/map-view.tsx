@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   useCouriers,
   useOrders,
@@ -35,6 +36,7 @@ import {
  *   7.1d — route/courier toggles
  */
 export function MapView(): React.ReactElement {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const { mapInstance, isLoading, error } = useYandexMap(containerRef)
   const mapEnabled = Boolean(YANDEX_MAPS_API_KEY)
@@ -102,10 +104,9 @@ export function MapView(): React.ReactElement {
       <div className="absolute inset-0 flex items-center justify-center bg-muted">
         <div className="text-center max-w-sm px-6">
           <div className="text-4xl mb-3 text-muted-foreground">&#128506;</div>
-          <p className="text-sm font-semibold text-foreground">Map not configured</p>
+          <p className="text-sm font-semibold text-foreground">{t('map.notConfigured')}</p>
           <p className="text-xs text-muted-foreground mt-1.5">
-            Set <code className="font-mono bg-muted-foreground/10 px-1 rounded">VITE_YANDEX_MAPS_API_KEY</code>{' '}
-            in your <code className="font-mono bg-muted-foreground/10 px-1 rounded">.env</code> file to enable the map.
+            {t('map.notConfiguredHint')}
           </p>
         </div>
       </div>
@@ -118,7 +119,7 @@ export function MapView(): React.ReactElement {
       <div
         ref={containerRef}
         className="absolute inset-0"
-        aria-label="Dispatcher map"
+        aria-label={t('map.ariaLabel')}
         role="application"
       />
 
@@ -127,7 +128,7 @@ export function MapView(): React.ReactElement {
         <div className="absolute inset-0 flex items-center justify-center bg-muted/80 backdrop-blur-sm z-10">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-muted-foreground">Loading map...</p>
+            <p className="text-xs text-muted-foreground">{t('map.loading')}</p>
           </div>
         </div>
       )}
@@ -137,11 +138,8 @@ export function MapView(): React.ReactElement {
         <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
           <div className="text-center max-w-sm px-6">
             <div className="text-4xl mb-3 text-destructive">&#9888;</div>
-            <p className="text-sm font-semibold text-foreground">Map unavailable</p>
+            <p className="text-sm font-semibold text-foreground">{t('map.unavailable')}</p>
             <p className="text-xs text-muted-foreground mt-1.5">{error}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Check your API key and internet connection.
-            </p>
           </div>
         </div>
       )}

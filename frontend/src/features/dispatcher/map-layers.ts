@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import i18n from '@/i18n'
 import {
   formatDeliveryWindow,
   getOrderDisplayId,
@@ -164,7 +165,7 @@ export function useRouteLayer(
       const polyline = new window.ymaps.Polyline(
         coordinates,
         {
-          hintContent: `Route ${route.version}`,
+          hintContent: i18n.t('map.balloon.routeVersion', { version: route.version }),
           balloonContent: buildRouteBalloon(route),
         },
         {
@@ -296,7 +297,7 @@ function buildOrderBalloon(order: Order): string {
   const displayId = escapeHtml(getOrderDisplayId(order))
   const address = escapeHtml(order.deliveryAddress)
   const status = escapeHtml(getStatusLabel(order.status))
-  const customer = escapeHtml(order.customerName ?? 'No customer')
+  const customer = escapeHtml(order.customerName ?? i18n.t('map.balloon.noCustomer'))
   const time = escapeHtml(
     formatDeliveryWindow(
       order.scheduledDate,
@@ -313,7 +314,9 @@ function buildOrderBalloon(order: Order): string {
 }
 
 function buildZoneBalloon(zone: Zone): string {
-  const rate = zone.baseRate ? `${escapeHtml(zone.baseRate)} RUB` : 'No base rate'
+  const rate = zone.baseRate
+    ? `${escapeHtml(zone.baseRate)} ₽`
+    : i18n.t('map.balloon.noBaseRate')
 
   return `
     <strong>${escapeHtml(zone.name)}</strong>
@@ -325,12 +328,12 @@ function buildRouteBalloon(route: Route): string {
   const orderCount = route.routePoints.length
   const distance =
     route.totalDistanceMeters === null
-      ? 'distance unknown'
-      : `${Math.round(route.totalDistanceMeters / 100) / 10} km`
+      ? i18n.t('map.balloon.distanceUnknown')
+      : `${Math.round(route.totalDistanceMeters / 100) / 10} км`
 
   return `
-    <strong>Route v${route.version}</strong>
-    <br /><small>${escapeHtml(route.status)} · ${orderCount} orders · ${distance}</small>
+    <strong>${escapeHtml(i18n.t('map.balloon.routeVersion', { version: route.version }))}</strong>
+    <br /><small>${escapeHtml(route.status)} · ${orderCount} · ${distance}</small>
   `
 }
 
@@ -341,7 +344,7 @@ function buildCourierBalloon(courier: Courier): string {
       hour: '2-digit',
       minute: '2-digit',
     })
-    : 'no GPS timestamp'
+    : i18n.t('map.balloon.noGpsTimestamp')
 
   return `
     <strong>${escapeHtml(name)}</strong>

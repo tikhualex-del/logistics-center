@@ -1,3 +1,6 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
 import type { Order, OrderStatus } from '@/api/orders.api'
 
 /**
@@ -17,18 +20,17 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   cancelled: 'bg-gray-100 text-gray-500',
 }
 
-/** Human-readable status labels for display in the order list */
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  new: 'New',
-  confirmed: 'Confirmed',
-  assigned: 'Assigned',
-  handed_over: 'Handed over',
-  in_transit: 'In transit',
-  delivered: 'Delivered',
-  undelivered: 'Undelivered',
-  returned: 'Returned',
-  cancelled: 'Cancelled',
-}
+const ORDER_STATUS_VALUES: OrderStatus[] = [
+  'new',
+  'confirmed',
+  'assigned',
+  'handed_over',
+  'in_transit',
+  'delivered',
+  'undelivered',
+  'returned',
+  'cancelled',
+]
 
 /**
  * Returns Tailwind badge classes for a given order status.
@@ -42,35 +44,46 @@ export function getStatusColor(status: OrderStatus): string {
  * Returns a human-readable label for a given order status.
  */
 export function getStatusLabel(status: OrderStatus): string {
-  return STATUS_LABELS[status] ?? status
+  const key = `orderStatus.${status}`
+  const translated = i18n.t(key)
+  return translated === key ? status : translated
 }
 
 /**
  * All order statuses in pipeline order (for filter dropdowns).
  */
-export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
-  { value: 'new', label: STATUS_LABELS.new },
-  { value: 'confirmed', label: STATUS_LABELS.confirmed },
-  { value: 'assigned', label: STATUS_LABELS.assigned },
-  { value: 'handed_over', label: STATUS_LABELS.handed_over },
-  { value: 'in_transit', label: STATUS_LABELS.in_transit },
-  { value: 'delivered', label: STATUS_LABELS.delivered },
-  { value: 'undelivered', label: STATUS_LABELS.undelivered },
-  { value: 'returned', label: STATUS_LABELS.returned },
-  { value: 'cancelled', label: STATUS_LABELS.cancelled },
-]
+export function useOrderStatusOptions(): { value: OrderStatus; label: string }[] {
+  const { t } = useTranslation()
+  return useMemo(
+    () =>
+      ORDER_STATUS_VALUES.map((value) => ({
+        value,
+        label: t(`orderStatus.${value}`),
+      })),
+    [t],
+  )
+}
 
 export type OrderTimeSlotFilter = 'morning' | 'day' | 'evening' | 'no-slot'
 
-export const ORDER_TIME_SLOT_OPTIONS: {
+const ORDER_TIME_SLOT_VALUES: { value: OrderTimeSlotFilter; key: string }[] = [
+  { value: 'morning', key: 'orderSlots.morning' },
+  { value: 'day', key: 'orderSlots.day' },
+  { value: 'evening', key: 'orderSlots.evening' },
+  { value: 'no-slot', key: 'orderSlots.none' },
+]
+
+export function useOrderTimeSlotOptions(): {
   value: OrderTimeSlotFilter
   label: string
-}[] = [
-  { value: 'morning', label: 'Morning' },
-  { value: 'day', label: 'Day' },
-  { value: 'evening', label: 'Evening' },
-  { value: 'no-slot', label: 'No slot' },
-]
+}[] {
+  const { t } = useTranslation()
+  return useMemo(
+    () =>
+      ORDER_TIME_SLOT_VALUES.map(({ value, key }) => ({ value, label: t(key) })),
+    [t],
+  )
+}
 
 /**
  * Formats an ISO datetime string to a short HH:mm time representation.
@@ -107,8 +120,8 @@ export function formatDeliveryWindow(
     return `${from}-${to}`
   }
 
-  if (from !== '—') return `from ${from}`
-  if (to !== '—') return `until ${to}`
+  if (from !== '—') return i18n.t('orders.from', { time: from })
+  if (to !== '—') return i18n.t('orders.until', { time: to })
   return formatTimeSlot(scheduledDate)
 }
 

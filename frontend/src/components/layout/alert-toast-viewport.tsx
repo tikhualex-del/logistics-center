@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUiStore } from '@/store'
 import { cn } from '@/lib/utils'
 import type { AlertNotificationPayload, AlertNotificationType } from '@/api/socket-client'
@@ -8,36 +9,37 @@ const TOAST_LIFETIME_MS = 6_000
 const TOAST_STYLES: Record<
   AlertNotificationType,
   {
-    label: string
+    labelKey: string
     accent: string
     icon: string
   }
 > = {
   'new-order': {
-    label: 'New order',
+    labelKey: 'alerts.newOrder',
     accent: 'bg-blue-500',
     icon: 'N',
   },
   'order-status-change': {
-    label: 'Order update',
+    labelKey: 'alerts.orderUpdate',
     accent: 'bg-amber-500',
     icon: 'O',
   },
   'route-change': {
-    label: 'Route update',
+    labelKey: 'alerts.routeUpdate',
     accent: 'bg-emerald-500',
     icon: 'R',
   },
 }
 
 export function AlertToastViewport(): React.ReactElement | null {
+  const { t } = useTranslation()
   const alertToasts = useUiStore((state) => state.alertToasts)
 
   if (alertToasts.length === 0) return null
 
   return (
     <section
-      aria-label="Realtime alerts"
+      aria-label={t('alerts.title')}
       aria-live="polite"
       className="pointer-events-none fixed right-4 top-16 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
     >
@@ -53,6 +55,7 @@ function AlertToastCard({
 }: {
   toast: AlertNotificationPayload
 }): React.ReactElement {
+  const { t } = useTranslation()
   const dismissAlertToast = useUiStore((state) => state.dismissAlertToast)
   const style = TOAST_STYLES[toast.type]
 
@@ -79,10 +82,10 @@ function AlertToastCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {style.label}
+              {t(style.labelKey)}
             </span>
             <time className="shrink-0 text-[10px] text-muted-foreground">
-              {formatToastTime(toast.createdAt)}
+              {formatToastTime(toast.createdAt, t('alerts.now'))}
             </time>
           </div>
           <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
@@ -96,7 +99,7 @@ function AlertToastCard({
           type="button"
           onClick={() => dismissAlertToast(toast.id)}
           className="h-7 w-7 shrink-0 rounded-lg text-sm leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Dismiss alert"
+          aria-label={t('alerts.dismiss')}
         >
           x
         </button>
@@ -106,9 +109,9 @@ function AlertToastCard({
   )
 }
 
-function formatToastTime(createdAt: string): string {
+function formatToastTime(createdAt: string, nowLabel: string): string {
   const date = new Date(createdAt)
-  if (Number.isNaN(date.getTime())) return 'now'
+  if (Number.isNaN(date.getTime())) return nowLabel
 
   return date.toLocaleTimeString('ru-RU', {
     hour: '2-digit',

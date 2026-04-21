@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
+import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
+import i18n from '@/i18n'
 import { QUERY_KEYS } from '@/api/query-keys'
 import type { ApiError } from '@/api/http-client'
 import type { Courier, Order, Route, RoutePoint } from '@/api'
@@ -18,6 +20,7 @@ const ROUTE_STATUS_STEPS = [
 ] as const
 
 export function RouteEditorPanel(): React.ReactElement {
+  const { t } = useTranslation()
   const selectedDate = useUiStore((state) => state.selectedDate)
   const selectedCourierId = useUiStore((state) => state.selectedCourierId)
   const selectedRouteId = useUiStore((state) => state.selectedRouteId)
@@ -51,13 +54,13 @@ export function RouteEditorPanel(): React.ReactElement {
   if (isError) {
     return (
       <RouteEditorShell>
-        <p className="text-xs font-semibold text-foreground">Route editor unavailable</p>
+        <p className="text-xs font-semibold text-foreground">{t('routes.editor.unavailable')}</p>
         <button
           type="button"
           onClick={() => void refetch()}
           className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
         >
-          Reload routes
+          {t('routes.editor.reloadRoutes')}
         </button>
       </RouteEditorShell>
     )
@@ -99,6 +102,7 @@ function RoutePicker({
   selectedDate: string
   onSelectRoute: (id: string) => void
 }): React.ReactElement {
+  const { t } = useTranslation()
   const couriersById = new Map(couriers.map((courier) => [courier.id, courier]))
 
   return (
@@ -106,10 +110,10 @@ function RoutePicker({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Route editor
+            {t('routes.editor.title')}
           </p>
           <p className="mt-1 text-sm font-semibold text-foreground">
-            Select a route
+            {t('routes.editor.selectRoute')}
           </p>
         </div>
         <span className="rounded-full border border-border bg-background px-2 py-1 text-[10px] font-medium text-muted-foreground">
@@ -119,7 +123,7 @@ function RoutePicker({
 
       {routes.length === 0 ? (
         <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-[11px] text-muted-foreground">
-          No routes for this date yet. Build a route first, then edit its points here.
+          {t('routes.editor.emptyHint')}
         </p>
       ) : (
         <div className="mt-3 space-y-1.5">
@@ -137,8 +141,8 @@ function RoutePicker({
                 <RouteStatusBadge route={route} />
               </span>
               <span className="mt-1 block text-[11px] text-muted-foreground">
-                {route.routePoints.length} orders - {formatRouteDistance(route)}
-                {' - '}
+                {t('routes.editor.ordersCount', { count: route.routePoints.length })} · {formatRouteDistance(route)}
+                {' · '}
                 {formatAssignedCourier(route, couriersById)}
               </span>
             </button>
@@ -166,6 +170,7 @@ function RouteEditorForm({
   selectedCourierId: string | null
   onSelectRoute: (id: string | null) => void
 }): React.ReactElement {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const updateRouteMutation = useUpdateRoute()
   const initialOrderIds = getRouteOrderIds(route)
@@ -202,8 +207,8 @@ function RouteEditorForm({
     setDraftCourierId(nextCourierId)
     setLocalMessage(
       nextCourierId
-        ? 'Courier assignment changed locally. Save to rebuild the route start point.'
-        : 'Courier assignment cleared locally. Save to rebuild the route.',
+        ? t('routes.editor.courierChangedLocal')
+        : t('routes.editor.courierClearedLocal'),
     )
   }
 
@@ -242,7 +247,7 @@ function RouteEditorForm({
     setDraftOrderIds((currentOrderIds) =>
       applyDraggedOrder(currentOrderIds, payload, targetOrderId),
     )
-    setLocalMessage('Route points changed locally. Save to recalculate the route.')
+    setLocalMessage(t('routes.editor.pointsChanged'))
   }
 
   function handleDropAtEnd(event: React.DragEvent<HTMLElement>): void {
@@ -255,7 +260,7 @@ function RouteEditorForm({
     setDraftOrderIds((currentOrderIds) =>
       applyDraggedOrder(currentOrderIds, payload, null),
     )
-    setLocalMessage('Route points changed locally. Save to recalculate the route.')
+    setLocalMessage(t('routes.editor.pointsChanged'))
   }
 
   function handleRemovePoint(orderId: string): void {
@@ -264,7 +269,7 @@ function RouteEditorForm({
     setDraftOrderIds((currentOrderIds) =>
       currentOrderIds.filter((currentOrderId) => currentOrderId !== orderId),
     )
-    setLocalMessage('Point removed locally. Save to apply the change.')
+    setLocalMessage(t('routes.editor.pointRemoved'))
   }
 
   function handleReset(): void {
@@ -305,7 +310,7 @@ function RouteEditorForm({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Route editor
+            {t('routes.editor.title')}
           </p>
           <p className="mt-1 text-sm font-semibold text-foreground">
             {formatRouteTitle(route)}
@@ -318,7 +323,7 @@ function RouteEditorForm({
 
       {routes.length > 1 && (
         <label className="mt-3 block">
-          <span className="sr-only">Select route to edit</span>
+          <span className="sr-only">{t('routes.editor.selectRouteLabel')}</span>
           <select
             value={route.id}
             onChange={(event) => onSelectRoute(event.target.value)}
@@ -326,7 +331,7 @@ function RouteEditorForm({
           >
             {routes.map((routeOption) => (
               <option key={routeOption.id} value={routeOption.id}>
-                {formatRouteTitle(routeOption)} · {routeOption.routePoints.length} orders
+                {formatRouteTitle(routeOption)} · {t('routes.editor.ordersCount', { count: routeOption.routePoints.length })}
               </option>
             ))}
           </select>
@@ -335,7 +340,7 @@ function RouteEditorForm({
 
       {!isEditable && (
         <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700">
-          Only draft and planned routes can be edited.
+          {t('routes.editor.onlyDraftEditable')}
         </p>
       )}
 
@@ -343,10 +348,10 @@ function RouteEditorForm({
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-[11px] font-semibold text-foreground">
-              Courier assignment
+              {t('routes.editor.courierAssignment')}
             </p>
             <p className="mt-0.5 text-[10px] text-muted-foreground">
-              Select a courier, then save to rebuild the route.
+              {t('routes.editor.courierHint')}
             </p>
           </div>
           {selectedCourier && selectedCourier.id !== draftCourierId && (
@@ -356,7 +361,7 @@ function RouteEditorForm({
               disabled={!isEditable || updateRouteMutation.isPending}
               className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Use selected
+              {t('routes.editor.useSelected')}
             </button>
           )}
         </div>
@@ -366,12 +371,12 @@ function RouteEditorForm({
           onChange={(event) => handleCourierChange(event.target.value)}
           disabled={!isEditable || updateRouteMutation.isPending}
           className="mt-2 h-8 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label="Assign courier to route"
+          aria-label={t('routes.editor.assignCourierAria')}
         >
-          <option value="">No courier assigned</option>
+          <option value="">{t('routes.editor.noCourier')}</option>
           {couriers.map((courier) => (
             <option key={courier.id} value={courier.id}>
-              {formatCourierName(courier)} - {courier.status}
+              {formatCourierName(courier)} - {t(`couriers.status.${courier.status}`)}
             </option>
           ))}
         </select>
@@ -389,7 +394,7 @@ function RouteEditorForm({
       >
         <div className="flex items-center justify-between px-1 pb-2">
           <span className="text-[11px] font-medium text-muted-foreground">
-            Drag points to reorder · drop orders to add
+            {t('routes.editor.dragHint')}
           </span>
           <span className="text-[11px] tabular-nums text-muted-foreground">
             {draftOrderIds.length}
@@ -399,7 +404,7 @@ function RouteEditorForm({
         <div className="max-h-[42vh] space-y-1.5 overflow-y-auto pr-1">
           {draftOrderIds.length === 0 ? (
             <p className="rounded-lg bg-background px-3 py-4 text-center text-[11px] text-muted-foreground">
-              Drop an order here to start rebuilding the route.
+              {t('routes.editor.dropHere')}
             </p>
           ) : (
             draftOrderIds.map((orderId, index) => {
@@ -445,9 +450,9 @@ function RouteEditorForm({
                       onClick={() => handleRemovePoint(orderId)}
                       disabled={!isEditable}
                       className="shrink-0 rounded-md px-1.5 py-1 text-[11px] font-semibold text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none group-hover:opacity-100"
-                      aria-label={`Remove ${summary.displayId} from route`}
+                      aria-label={t('routes.editor.removeFromRoute', { id: summary.displayId })}
                     >
-                      Remove
+                      {t('routes.editor.remove')}
                     </button>
                   </div>
                 </div>
@@ -459,7 +464,7 @@ function RouteEditorForm({
 
       {draftOrderIds.length === 0 && (
         <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
-          A route must contain at least one order before saving.
+          {t('routes.editor.mustHaveOrder')}
         </p>
       )}
 
@@ -482,7 +487,7 @@ function RouteEditorForm({
           disabled={!hasChanges || updateRouteMutation.isPending}
           className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Reset
+          {t('common.reset')}
         </button>
         <button
           type="button"
@@ -495,7 +500,7 @@ function RouteEditorForm({
               : 'cursor-not-allowed bg-muted text-muted-foreground',
           )}
         >
-          {updateRouteMutation.isPending ? 'Saving...' : 'Save route'}
+          {updateRouteMutation.isPending ? t('common.saving') : t('routes.editor.save')}
         </button>
       </div>
     </RouteEditorShell>

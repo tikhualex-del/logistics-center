@@ -1,25 +1,26 @@
+import { useTranslation } from 'react-i18next'
 import { useAuthStore, useUiStore } from '@/store'
 import { usePermissions } from '@/hooks'
 import {
-  ORDER_STATUS_OPTIONS,
-  ORDER_TIME_SLOT_OPTIONS,
+  useOrderStatusOptions,
+  useOrderTimeSlotOptions,
   type OrderTimeSlotFilter,
 } from '@/lib/order-utils'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/api'
 
 /** Format an ISO date string (YYYY-MM-DD) to a readable label. */
-function formatDateLabel(isoDate: string): string {
+function formatDateLabel(isoDate: string, todayLabel: string): string {
   const now = new Date()
   const today = [
     now.getFullYear(),
     String(now.getMonth() + 1).padStart(2, '0'),
     String(now.getDate()).padStart(2, '0'),
   ].join('-')
-  if (isoDate === today) return 'Today'
+  if (isoDate === today) return todayLabel
 
   const date = new Date(isoDate + 'T00:00:00')
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('ru-RU', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -126,16 +127,14 @@ function UserAvatar({ firstName, lastName }: { firstName: string; lastName: stri
 
 /** Role badge label */
 function RoleBadge({ role }: { role: string }): React.ReactElement {
-  const labels: Record<string, string> = {
-    admin: 'Admin',
-    dispatcher: 'Dispatcher',
-    courier: 'Courier',
-  }
+  const { t } = useTranslation()
   const colors: Record<string, string> = {
     admin: 'bg-blue-100 text-blue-800',
     dispatcher: 'bg-green-100 text-green-800',
     courier: 'bg-amber-100 text-amber-800',
   }
+  const roleKey = `roles.${role}`
+  const label = t(roleKey)
   return (
     <span
       className={cn(
@@ -143,7 +142,7 @@ function RoleBadge({ role }: { role: string }): React.ReactElement {
         colors[role] ?? 'bg-muted text-muted-foreground',
       )}
     >
-      {labels[role] ?? role}
+      {label === roleKey ? role : label}
     </span>
   )
 }
@@ -163,6 +162,7 @@ function RoleBadge({ role }: { role: string }): React.ReactElement {
  * - User info from auth store
  */
 export function TopBar(): React.ReactElement {
+  const { t } = useTranslation()
   const {
     selectedDate,
     setSelectedDate,
@@ -182,6 +182,8 @@ export function TopBar(): React.ReactElement {
 
   const { user, clearAuth } = useAuthStore()
   const { can } = usePermissions()
+  const statusOptions = useOrderStatusOptions()
+  const timeSlotOptions = useOrderTimeSlotOptions()
 
   return (
     <header
@@ -191,7 +193,7 @@ export function TopBar(): React.ReactElement {
       {/* Date picker */}
       <div className="relative flex items-center">
         <label htmlFor="top-bar-date" className="sr-only">
-          Select date
+          {t('topBar.selectDate')}
         </label>
         {/* Visible styled trigger — overlaid on the native date input */}
         <div
@@ -199,7 +201,7 @@ export function TopBar(): React.ReactElement {
           aria-hidden="true"
         >
           <IconCalendar />
-          <span className="min-w-[3.5rem]">{formatDateLabel(selectedDate)}</span>
+          <span className="min-w-[3.5rem]">{formatDateLabel(selectedDate, t('topBar.today'))}</span>
         </div>
         {/* Native date input — absolutely positioned over the styled div */}
         <input
@@ -208,7 +210,7 @@ export function TopBar(): React.ReactElement {
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           className="absolute inset-0 opacity-0 cursor-pointer w-full"
-          aria-label="Select date"
+          aria-label={t('topBar.selectDate')}
         />
       </div>
 
@@ -221,15 +223,15 @@ export function TopBar(): React.ReactElement {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search orders, couriers..."
+          placeholder={t('topBar.searchPlaceholder')}
           className="w-full h-8 pl-8 pr-3 text-sm rounded-md border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          aria-label="Search orders and couriers"
+          aria-label={t('topBar.searchPlaceholder')}
         />
       </div>
 
       {/* Dispatcher filters */}
       <label htmlFor="top-bar-status-filter" className="sr-only">
-        Filter orders by status
+        {t('topBar.allStatuses')}
       </label>
       <select
         id="top-bar-status-filter"
@@ -238,10 +240,10 @@ export function TopBar(): React.ReactElement {
           setStatusFilter(e.target.value === '' ? null : (e.target.value as OrderStatus))
         }
         className="h-8 w-32 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        aria-label="Filter orders by status"
+        aria-label={t('topBar.allStatuses')}
       >
-        <option value="">All statuses</option>
-        {ORDER_STATUS_OPTIONS.map((status) => (
+        <option value="">{t('topBar.allStatuses')}</option>
+        {statusOptions.map((status) => (
           <option key={status.value} value={status.value}>
             {status.label}
           </option>
@@ -249,7 +251,7 @@ export function TopBar(): React.ReactElement {
       </select>
 
       <label htmlFor="top-bar-time-slot-filter" className="sr-only">
-        Filter orders by time slot
+        {t('topBar.allSlots')}
       </label>
       <select
         id="top-bar-time-slot-filter"
@@ -260,10 +262,10 @@ export function TopBar(): React.ReactElement {
           )
         }
         className="h-8 w-28 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        aria-label="Filter orders by time slot"
+        aria-label={t('topBar.allSlots')}
       >
-        <option value="">All slots</option>
-        {ORDER_TIME_SLOT_OPTIONS.map((slot) => (
+        <option value="">{t('topBar.allSlots')}</option>
+        {timeSlotOptions.map((slot) => (
           <option key={slot.value} value={slot.value}>
             {slot.label}
           </option>
@@ -285,9 +287,9 @@ export function TopBar(): React.ReactElement {
                 : 'border-input bg-background text-muted-foreground hover:bg-accent',
             )}
             aria-pressed={showRoutes}
-            aria-label="Toggle routes layer"
+            aria-label={t('topBar.routes')}
           >
-            Routes
+            {t('topBar.routes')}
           </button>
           <button
             onClick={toggleCouriersLayer}
@@ -298,9 +300,9 @@ export function TopBar(): React.ReactElement {
                 : 'border-input bg-background text-muted-foreground hover:bg-accent',
             )}
             aria-pressed={showCouriers}
-            aria-label="Toggle couriers layer"
+            aria-label={t('topBar.couriers')}
           >
-            Couriers
+            {t('topBar.couriers')}
           </button>
         </div>
       )}
@@ -309,8 +311,8 @@ export function TopBar(): React.ReactElement {
       <button
         onClick={() => setAlertCount(0)}
         className="relative p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-        aria-label={`Alerts${alertCount > 0 ? `, ${alertCount} unread` : ''}`}
-        title={alertCount > 0 ? 'Mark alerts as read' : 'No unread alerts'}
+        aria-label={alertCount > 0 ? `${t('alerts.title')}, ${alertCount}` : t('alerts.title')}
+        title={alertCount > 0 ? t('topBar.markAlertsRead') : t('topBar.noAlerts')}
       >
         <IconBell />
         {alertCount > 0 && (
@@ -336,8 +338,8 @@ export function TopBar(): React.ReactElement {
           <button
             onClick={clearAuth}
             className="ml-1 p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            aria-label="Log out"
-            title="Log out"
+            aria-label={t('common.logout')}
+            title={t('common.logout')}
           >
             <IconLogout />
           </button>

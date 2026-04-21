@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useOrders } from '@/hooks'
 import { useUiStore } from '@/store'
 import {
@@ -21,6 +22,7 @@ import { OrderCard } from './order-card'
  * Overflow: handled by this component (overflow-y-auto on the list area).
  */
 export function OrderListPanel(): React.ReactElement {
+  const { t } = useTranslation()
   const {
     selectedDate,
     searchQuery,
@@ -50,7 +52,7 @@ export function OrderListPanel(): React.ReactElement {
       {/* Panel header */}
       <div className="px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Orders</h2>
+          <h2 className="text-sm font-semibold">{t('orders.title')}</h2>
           {!isLoading && !isError && (
             <span className="text-xs text-muted-foreground tabular-nums">
               {total}
@@ -58,7 +60,7 @@ export function OrderListPanel(): React.ReactElement {
           )}
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Click to highlight on map &bull; Drag to assign courier
+          {t('orders.hint')}
         </p>
       </div>
 
@@ -68,22 +70,22 @@ export function OrderListPanel(): React.ReactElement {
 
         {!isLoading && isError && (
           <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground">Failed to load orders.</p>
+            <p className="text-xs text-muted-foreground">{t('orders.loadError')}</p>
             <button
               onClick={() => void refetch()}
               className="mt-2 text-xs text-primary underline underline-offset-2 hover:no-underline"
             >
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         )}
 
         {!isLoading && !isError && visibleOrders.length === 0 && (
           <div className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">No orders for this date.</p>
+            <p className="text-sm text-muted-foreground">{t('orders.emptyForDate')}</p>
             {(statusFilter || timeSlotFilter || searchQuery) && (
               <p className="text-xs text-muted-foreground mt-1">
-                Try clearing the filters.
+                {t('orders.tryClearFilters')}
               </p>
             )}
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import {
   formatDeliveryWindow,
@@ -28,6 +29,7 @@ interface OrderCardProps {
  *   This is the drag SOURCE for courier assignment (7.2c drop target).
  */
 export function OrderCard({ order, isSelected, onSelect }: OrderCardProps): React.ReactElement {
+  const { t } = useTranslation()
   function handleClick(): void {
     onSelect(order.id)
   }
@@ -63,7 +65,7 @@ export function OrderCard({ order, isSelected, onSelect }: OrderCardProps): Reac
       onKeyDown={handleKeyDown}
       onDragStart={handleDragStart}
       aria-pressed={isSelected}
-      aria-label={`Order ${displayId}, ${getStatusLabel(order.status)}, ${order.deliveryAddress}`}
+      aria-label={`${displayId}, ${getStatusLabel(order.status)}, ${order.deliveryAddress}`}
       className={cn(
         'p-3 rounded-md border cursor-pointer transition-all select-none',
         'hover:shadow-sm active:scale-[0.99]',
@@ -106,7 +108,7 @@ export function OrderCard({ order, isSelected, onSelect }: OrderCardProps): Reac
             isAssigned ? 'text-green-700' : 'text-muted-foreground',
           )}
         >
-          {isAssigned ? 'Assigned' : 'Unassigned'}
+          {isAssigned ? t('orders.assigned') : t('orders.unassigned')}
         </span>
       </div>
     </div>

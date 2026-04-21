@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/hooks'
 import { useUiStore } from '@/store'
 import { ROUTES } from '@/lib/constants'
@@ -10,7 +11,7 @@ import type { Permission } from '@/hooks'
  * `requiredPermissions`: user must have AT LEAST ONE of these to see the item.
  */
 interface NavItem {
-  label: string
+  labelKey: string
   href: string
   requiredPermissions: Permission[]
   icon: React.ReactNode
@@ -132,26 +133,25 @@ function IconChevron({ collapsed }: { collapsed: boolean }): React.ReactElement 
  */
 const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Map',
+    labelKey: 'nav.map',
     href: ROUTES.DISPATCHER,
     requiredPermissions: ['view:orders'],
     icon: <IconMap />,
   },
   {
-    label: 'Couriers',
+    labelKey: 'nav.couriers',
     href: ROUTES.COURIERS,
     requiredPermissions: ['manage:couriers'],
     icon: <IconUsers />,
   },
   {
-    label: 'Payments',
+    labelKey: 'nav.payments',
     href: ROUTES.PAYMENTS,
-    // Admin manages payment rules; courier views own earnings — same nav item
     requiredPermissions: ['edit:payment-rules', 'view:own-earnings'],
     icon: <IconWallet />,
   },
   {
-    label: 'Settings',
+    labelKey: 'nav.settings',
     href: ROUTES.SETTINGS,
     requiredPermissions: ['manage:users'],
     icon: <IconSettings />,
@@ -167,6 +167,7 @@ const NAV_ITEMS: NavItem[] = [
  * Collapse state is managed via useUiStore (Zustand UI state — correct per §8).
  */
 export function Sidebar(): React.ReactElement {
+  const { t } = useTranslation()
   const { can } = usePermissions()
   const { sidebarCollapsed, toggleSidebar } = useUiStore()
 
@@ -182,7 +183,7 @@ export function Sidebar(): React.ReactElement {
         'flex flex-col h-full bg-card border-r border-border transition-all duration-200 shrink-0',
         sidebarCollapsed ? 'w-14' : 'w-52',
       )}
-      aria-label="Main navigation"
+      aria-label={t('nav.main')}
     >
       {/* Brand / logo area */}
       <div
@@ -196,7 +197,7 @@ export function Sidebar(): React.ReactElement {
           <span className="text-primary-foreground text-xs font-bold">LC</span>
         </div>
         {!sidebarCollapsed && (
-          <span className="text-sm font-semibold truncate">Logistics</span>
+          <span className="text-sm font-semibold truncate">{t('nav.brand')}</span>
         )}
       </div>
 
@@ -216,11 +217,11 @@ export function Sidebar(): React.ReactElement {
                   sidebarCollapsed && 'justify-center',
                 )
               }
-              title={sidebarCollapsed ? item.label : undefined}
+              title={sidebarCollapsed ? t(item.labelKey) : undefined}
             >
               <span className="shrink-0">{item.icon}</span>
               {!sidebarCollapsed && (
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{t(item.labelKey)}</span>
               )}
             </NavLink>
           </li>
@@ -236,10 +237,10 @@ export function Sidebar(): React.ReactElement {
             'hover:bg-accent hover:text-accent-foreground transition-colors',
             sidebarCollapsed && 'justify-center',
           )}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
         >
           <IconChevron collapsed={sidebarCollapsed} />
-          {!sidebarCollapsed && <span>Collapse</span>}
+          {!sidebarCollapsed && <span>{t('nav.collapseShort')}</span>}
         </button>
       </div>
     </nav>
