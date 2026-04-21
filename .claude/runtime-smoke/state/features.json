@@ -1,0 +1,336 @@
+{
+  "features": [
+    {
+      "id": "FEAT-001",
+      "name": "git-and-repository-setup",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.1"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-002",
+      "name": "backend-scaffold",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.2"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-003",
+      "name": "docker-and-database-setup",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-004",
+      "name": "frontend-scaffold",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-005",
+      "name": "health-endpoints-liveness-readiness",
+      "status": "created",
+      "current_version": 1,
+      "current_step": "planner",
+      "last_verdict": "pending",
+      "task_ids": [
+        "1.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-070",
+      "name": "payment-rules-constructor",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-071",
+      "name": "payments-list-and-details",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-072",
+      "name": "user-management-admin",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-073",
+      "name": "company-settings-admin",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-074",
+      "name": "auth-flow-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-075",
+      "name": "tenant-isolation-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-076",
+      "name": "state-machine-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-077",
+      "name": "payment-calculation-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-078",
+      "name": "rbac-permission-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1e"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-079",
+      "name": "integration-api-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1f"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-080",
+      "name": "frontend-auth-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

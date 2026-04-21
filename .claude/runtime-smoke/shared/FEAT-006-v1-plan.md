@@ -1,0 +1,1 @@
+﻿# smoke plan v1

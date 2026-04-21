@@ -12,7 +12,18 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:password@localhost:5432/logistics_center?schema=public\" npx prisma generate)",
       "Bash(npm run:*)",
       "Bash(npm view *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(npx tsc *)",
+      "Bash(cat frontend/.env.example)",
+      "Bash(cat frontend/.env)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 5433 -U postgres -d logistics_center -c \"\\\\dt\")",
+      "Bash(docker exec *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@example.com\",\"password\":\"password123\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/v1/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\",\"password\":\"Test1234!\",\"firstName\":\"Test\",\"lastName\":\"User\",\"companyName\":\"Test Company\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/v1/orders -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjQxZjJkYS1lZWRjLTRjN2UtOTY4Yi1jNmVlMTA1ZDBmNTgiLCJjb21wYW55SWQiOiI5ZjgwMjIxOC03Nzg0LTRkYTYtOWNjNi01OTc2MWI2OWE1ZDEiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJpYXQiOjE3NzY2NDE0NzcsImV4cCI6MTc3NjY0MjM3N30.lj1BoiqRcAJhCcUQy2M5IR9gXLo6WRHSpEayFLrDgWM' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s 'http://localhost:3000/api/v1/orders?date=2026-04-20' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjQxZjJkYS1lZWRjLTRjN2UtOTY4Yi1jNmVlMTA1ZDBmNTgiLCJjb21wYW55SWQiOiI5ZjgwMjIxOC03Nzg0LTRkYTYtOWNjNi01OTc2MWI2OWE1ZDEiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJpYXQiOjE3NzY2NDE0NzcsImV4cCI6MTc3NjY0MjM3N30.lj1BoiqRcAJhCcUQy2M5IR9gXLo6WRHSpEayFLrDgWM')"
     ]
   }
 }

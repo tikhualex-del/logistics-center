@@ -1,1 +1,10 @@
-// Reset placeholder: the health feature is not active in the current runtime state.
+import { Module } from '@nestjs/common';
+import { HealthController } from './health.controller';
+import { PrismaHealthIndicator } from './indicators/prisma.health-indicator';
+import { RedisHealthIndicator } from './indicators/redis.health-indicator';
+
+@Module({
+  controllers: [HealthController],
+  providers: [PrismaHealthIndicator, RedisHealthIndicator],
+})
+export class HealthModule {}

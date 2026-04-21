@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { disconnectSocket } from '@/api/socket-client'
 
 /**
  * User roles (per CLAUDE.md Section 7 permission matrix).
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         localStorage.removeItem('access_token')
+        disconnectSocket()
         set({ user: null, accessToken: null, isAuthenticated: false })
       },
     }),

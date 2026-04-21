@@ -1,0 +1,101 @@
+{
+  "active_feature": "FEAT-004",
+  "pipelines": {
+    "FEAT-001": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-002": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-003": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-004": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-005": {
+      "current_step": "planner",
+      "status": "created",
+      "version": 1,
+      "result": "pending"
+    },
+    "FEAT-070": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-071": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-072": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-073": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-074": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-075": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-076": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-077": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-078": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-079": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    },
+    "FEAT-080": {
+      "current_step": "completed",
+      "status": "done",
+      "version": 1,
+      "result": "approve"
+    }
+  }
+}

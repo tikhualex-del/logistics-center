@@ -1,5 +1,7 @@
 import { io, type Socket } from 'socket.io-client'
 import { WS_URL } from '@/lib/constants'
+import type { CourierStatus } from './couriers.api'
+import type { OrderStatus } from './orders.api'
 
 /**
  * WebSocket event names (per CLAUDE.md Section 16).
@@ -13,6 +15,49 @@ export const WS_EVENTS = {
 } as const
 
 export type WsEventName = (typeof WS_EVENTS)[keyof typeof WS_EVENTS]
+
+export interface CourierLocationUpdatedPayload {
+  companyId: string
+  entityId: string
+  timestamp: string
+  courierId: string
+  latitude: number
+  longitude: number
+  lastSeenAt: string | null
+  status: CourierStatus
+  firstName: string
+  lastName: string | null
+}
+
+export interface OrderStatusChangedPayload {
+  companyId: string
+  entityId: string
+  timestamp: string
+  orderId: string
+  orderNumber: string | null
+  externalId: string | null
+  fromStatus: OrderStatus
+  toStatus: OrderStatus
+  reason: string | null
+  deliveryAddress: string
+}
+
+export type AlertNotificationType =
+  | 'new-order'
+  | 'order-status-change'
+  | 'route-change'
+
+export interface AlertNotificationPayload {
+  id: string
+  type: AlertNotificationType
+  companyId: string
+  entityType: 'order' | 'route'
+  entityId: string
+  title: string
+  message: string
+  createdAt: string
+  data: Record<string, unknown>
+}
 
 /**
  * Singleton Socket.io client.

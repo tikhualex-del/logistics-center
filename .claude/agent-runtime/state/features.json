@@ -87,10 +87,10 @@
     {
       "id": "FEAT-005",
       "name": "health-endpoints-liveness-readiness",
-      "status": "created",
+      "status": "done",
       "current_version": 1,
-      "current_step": "planner",
-      "last_verdict": "pending",
+      "current_step": "completed",
+      "last_verdict": "approve",
       "task_ids": [
         "1.4"
       ],
@@ -98,6 +98,10 @@
         {
           "version": 1,
           "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
         }
       ]
     },
@@ -109,6 +113,1583 @@
       "current_step": "completed",
       "last_verdict": "approve",
       "task_ids": [],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-007",
+      "name": "repository-structure",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "0.5"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-008",
+      "name": "prisma-schema-initial-migration",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.1"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-009",
+      "name": "prisma-service-tenant-isolation",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.2"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-010",
+      "name": "exception-filter-api-conventions",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-011",
+      "name": "request-id-interceptor-http-context",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-012",
+      "name": "response-envelope-success-meta",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-013",
+      "name": "app-validation-pipe-global-provider",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-014",
+      "name": "structured-logging-pino-context-fields",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3e"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-015",
+      "name": "global-throttler-guard-public-http",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.3f"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-016",
+      "name": "domain-event-constants",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.5"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-017",
+      "name": "swagger-setup-jwt-ui",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "1.6"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-018",
+      "name": "auth-controller-register-login-refresh-logout",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.1a",
+        "2.1b",
+        "2.1c",
+        "2.1d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-019",
+      "name": "jwt-auth-guard",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-020",
+      "name": "tenant-guard-global-validation",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-021",
+      "name": "roles-guard-role-metadata-enforcement",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.2c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-022",
+      "name": "permissions-guard-data-driven-matrix",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.2d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-023",
+      "name": "users-module-tenant-safe-crud",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-024",
+      "name": "companies-module-feature-flags",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-025",
+      "name": "auth-decorators-current-user-public",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "2.5"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-026",
+      "name": "zones-module-admin-crud",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.1"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-027",
+      "name": "orders-crud-tenant-safe-module",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-028",
+      "name": "orders-state-machine-transition-logging",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-029",
+      "name": "orders-domain-events-emission",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.2c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-030",
+      "name": "couriers-crud-status-location-module",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.3a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-031",
+      "name": "courier-location-events",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.3b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-032",
+      "name": "routing-provider-interface-contract",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.4a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-033",
+      "name": "yandex-routing-provider-with-dev-mock",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.4b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-034",
+      "name": "routing-service-controller-state-machine",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.4c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-035",
+      "name": "routing-domain-events-emission",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.4d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-036",
+      "name": "audit-module-event-subscribers-and-admin-log-list",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "3.5"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-037",
+      "name": "payment-rules-versioned-crud",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-038",
+      "name": "payment-calculation-engine-with-breakdown",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-039",
+      "name": "payments-state-machine",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.1c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-040",
+      "name": "integrations-inbound-orders",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-041",
+      "name": "integrations-outbound-webhooks",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-042",
+      "name": "notifications-websocket-module",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "4.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-043",
+      "name": "realtime-websocket-gateway",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "5.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-044",
+      "name": "realtime-domain-events-bridge",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "5.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-045",
+      "name": "bull-queues-infrastructure",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "5.2"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-046",
+      "name": "frontend-structure-and-config",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.1"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-047",
+      "name": "login-page-form",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-048",
+      "name": "register-page-form",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-049",
+      "name": "auth-store-axios-interceptors",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.2c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-050",
+      "name": "protected-routes-protectedroute-wrapper-with-auth-redirect",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.2d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-051",
+      "name": "use-permissions-hook-can-action-role-based-rendering",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.3c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-052",
+      "name": "sidebar-navigation-role-based-visibility",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.3a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-053",
+      "name": "top-bar-date-picker-search-alerts-badge",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.3b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-054",
+      "name": "api-layer-tanstack-query-hooks",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "6.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-055",
+      "name": "yandex-maps-integration-mapview-component",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-056",
+      "name": "dispatcher-order-list-panel",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1e"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-057",
+      "name": "dispatcher-top-bar-filters",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1f"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-058",
+      "name": "dispatcher-socket-connection",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.3a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-059",
+      "name": "dispatcher-order-markers",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-060",
+      "name": "dispatcher-zone-polygons",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-061",
+      "name": "dispatcher-route-courier-layer-toggles",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.1d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-062",
+      "name": "dispatcher-route-building",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-063",
+      "name": "dispatcher-route-editor",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-064",
+      "name": "dispatcher-route-courier-assignment",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.2c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-065",
+      "name": "dispatcher-live-courier-positions",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.3b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-066",
+      "name": "dispatcher-live-order-updates",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.3c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-067",
+      "name": "dispatcher-alert-toasts-badge",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "7.3d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-068",
+      "name": "couriers-list-page",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-069",
+      "name": "couriers-detail-card",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-070",
+      "name": "payment-rules-constructor",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.2a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-071",
+      "name": "payments-list-and-details",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.2b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-072",
+      "name": "user-management-admin",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.3"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-073",
+      "name": "company-settings-admin",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "8.4"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-074",
+      "name": "auth-flow-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1a"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-075",
+      "name": "tenant-isolation-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1b"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-076",
+      "name": "state-machine-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1c"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-077",
+      "name": "payment-calculation-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1d"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-078",
+      "name": "rbac-permission-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1e"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-079",
+      "name": "integration-api-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.1f"
+      ],
+      "history": [
+        {
+          "version": 1,
+          "status": "created"
+        },
+        {
+          "version": 1,
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-080",
+      "name": "frontend-auth-tests",
+      "status": "done",
+      "current_version": 1,
+      "current_step": "completed",
+      "last_verdict": "approve",
+      "task_ids": [
+        "9.2a"
+      ],
       "history": [
         {
           "version": 1,

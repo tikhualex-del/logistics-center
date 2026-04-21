@@ -1,1 +1,1 @@
-// Reset placeholder: the health feature is not active in the current runtime state.
+// Legacy placeholder retained only to avoid broken references in old runtime artifacts.

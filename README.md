@@ -36,9 +36,8 @@ docker-compose up -d
 ```bash
 cd backend
 
-# Copy environment variables
-cp .env.example .env
-# Edit .env and set your DATABASE_URL and secrets
+# Backend and Prisma read the root ../.env first.
+# backend/.env is optional and used only as a local fallback.
 
 # Install dependencies
 npm install

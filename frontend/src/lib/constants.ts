@@ -29,6 +29,10 @@ export const PAGINATION = {
 /** Application routes */
 export const ROUTES = {
   LOGIN: '/login',
+  REGISTER: '/register',
   DISPATCHER: '/dispatcher',
+  COURIERS: '/couriers',
+  PAYMENTS: '/payments',
+  SETTINGS: '/settings',
   NOT_FOUND: '*',
 } as const
