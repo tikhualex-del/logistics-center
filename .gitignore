@@ -68,3 +68,6 @@ temp/
 *.pid
 *.seed
 *.pid.lock
+
+# Local Claude settings
+.claude/settings.local.json

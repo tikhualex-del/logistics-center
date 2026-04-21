@@ -2,7 +2,7 @@
 
 SaaS platform for end-to-end logistics department management. Designed for small and medium businesses with their own delivery operations (5-50 couriers, 20-500 orders/day).
 
-For detailed project guidelines, architecture, and conventions, see [CLAUDE.md](./CLAUDE.md).
+For detailed project guidelines, architecture, and conventions, see [docs/CLAUDE.md](./docs/CLAUDE.md).
 
 ## Tech Stack
 
@@ -29,11 +29,9 @@ cp .env.example .env
 
 # Start PostgreSQL 16 and Redis
 docker-compose up -d
-```
 
-### 2. Set up the backend
+2. Set up the backend
 
-```bash
 cd backend
 
 # Backend and Prisma read the root ../.env first.
@@ -50,20 +48,16 @@ npx prisma migrate dev
 
 # Start development server (http://localhost:3000)
 npm run start:dev
-```
 
-API documentation is available at: `http://localhost:3000/api/docs`
+API documentation is available at: http://localhost:3000/api/docs
 
-## Documentation
+Documentation
 
-Project documentation is located in the `documentation/` directory:
+Project documentation is located in the docs/ directory:
 
-- `plan.md` -- implementation plan and phases
-- `description.md` -- detailed product description
-- `PROJECT_IDEA.md` -- original project concept
-- `specificity.md` -- domain-specific details
-- `instructions.md` -- development instructions
-
-## License
+CLAUDE.md -- project rules and conventions
+FOUNDATION.md -- system overview
+COMPANIES_DOMAIN.md -- companies domain notes
+License
 
 Private. All rights reserved.

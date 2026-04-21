@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: logistics-center-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: logistics_center
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - logistics_center_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  logistics_center_postgres_data:

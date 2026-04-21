@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:map\"",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:map": "cd apps/map && npx serve -l 3001"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
