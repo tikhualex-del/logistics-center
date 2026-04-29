@@ -117,6 +117,51 @@
     "from": "с {{time}}",
     "until": "до {{time}}"
   },
+  "monitoring": {
+    "section": "Операционный контроль",
+    "title": "Мониторинг исполнения",
+    "subtitle": "Сводка маршрутов, заказов и курьеров на {{date}}.",
+    "openDispatcher": "Открыть карту",
+    "loadError": "Часть данных мониторинга не загрузилась. Можно обновить виджет или продолжить с доступными данными.",
+    "stats": {
+      "activeRoutes": "Активные маршруты",
+      "activeOrders": "Заказы в работе",
+      "delivered": "Доставлено",
+      "atRisk": "Под риском SLA",
+      "activeRoutesHint": "Маршруты в статусах planned и in_progress.",
+      "activeOrdersHint": "Подтвержденные, назначенные и находящиеся в доставке заказы.",
+      "deliveredHint": "Завершенные доставки за выбранную дату.",
+      "atRiskHint": "Окно доставки истекло или осталось меньше 30 минут. Курьеров онлайн: {{count}}."
+    },
+    "routes": {
+      "title": "Активные маршруты",
+      "eyebrow": "{{count}} в работе",
+      "emptyTitle": "Активных маршрутов нет",
+      "emptyDescription": "Когда маршруты будут запланированы или выйдут в работу, они появятся здесь.",
+      "routeName": "Маршрут #{{id}} · v{{version}}",
+      "ordersCount": "{{count}} заказов",
+      "distance": "Дистанция",
+      "distanceKm": "{{value}} км",
+      "duration": "Время",
+      "durationMinutes": "{{value}} мин"
+    },
+    "routeStatus": {
+      "draft": "Черновик",
+      "planned": "Запланирован",
+      "in_progress": "В работе",
+      "completed": "Завершен",
+      "cancelled": "Отменен"
+    },
+    "couriers": {
+      "title": "Курьеры на линии",
+      "eyebrow": "{{count}} активных",
+      "emptyTitle": "Курьеров на линии нет",
+      "emptyDescription": "Онлайн-курьеры и курьеры с активной загрузкой появятся здесь.",
+      "progress": "{{active}} в работе · {{delivered}} доставлено",
+      "online": "Онлайн",
+      "offline": "Офлайн"
+    }
+  },
   "aiDispatcher": {
     "open": "AI диспетчер",
     "title": "AI диспетчер",
