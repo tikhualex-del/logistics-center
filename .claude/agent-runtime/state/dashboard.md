@@ -1,6 +1,6 @@
 # Дашборд агентного runtime
 
-Обновлено: 10:55 21.4.2026
+Обновлено: 29.4.2026 (ревизия плана Phase 11–13 после независимого аудита)
 
 ---
 
@@ -346,3 +346,169 @@ phase-6 ◄── phase-2 ──────────────────
 - `operations-ux-reviewer` — UX-ревьюер
 - `reviewer` — финальный ревьюер
 - `completed` — pipeline завершён
+
+---
+
+## Аудит 28.4.2026 — состояние и следующие шаги
+
+### Резюме
+
+Канонический стек по [CLAUDE.md](../../../CLAUDE.md) (NestJS backend + Vite/React frontend) реализован полно и качественно: 13 доменных модулей, 56 test suites / 279 backend-тестов passing, strict TypeScript без ошибок, multi-tenant isolation через `runWithTenant`, state machines, RoutingProvider abstraction, append-only audit/payments, JWT+refresh+httpOnly cookie, Pino structured logging, Swagger UI, Prisma migrations с полной схемой по §9 CLAUDE.md. Frontend — TanStack Query + Zustand + shadcn/ui + Yandex Maps, dispatcher workspace с map-first UX, защищённые роуты с RBAC.
+
+**Главный риск:** в репозитории живёт второй, нелегитимный стек `apps/api` (Express) + `apps/web` (Next.js), который противоречит §2 CLAUDE.md, и рутовый `package.json` запускает именно его. 139 незакоммиченных файлов в обеих ветках стека повышают вероятность потери работы.
+
+### Что сделано хорошо (соответствует CLAUDE.md)
+
+| Область | Статус | Файлы / маркеры |
+|---|---|---|
+| Modular monolith NestJS | ✅ | [backend/src/app.module.ts](../../../backend/src/app.module.ts) |
+| 13 доменных модулей по §7 | ✅ | [backend/src/modules/](../../../backend/src/modules/) — auth, users, companies, orders, routing, couriers, zones, compensation, integrations, notifications, realtime, audit, health |
+| Multi-tenant isolation | ✅ | [backend/src/prisma/tenant-context.service.ts](../../../backend/src/prisma/tenant-context.service.ts), `runWithTenant()` оборачивает все service-методы |
+| Auth: JWT + refresh httpOnly cookie | ✅ | [backend/src/modules/auth/](../../../backend/src/modules/auth/) |
+| RBAC data-driven | ✅ | [backend/src/modules/auth/permissions/permission-matrix.ts](../../../backend/src/modules/auth/permissions/permission-matrix.ts), `@RequirePermission` |
+| State machines + audit | ✅ | order/route/payment-state-machine.ts, `audit_logs` append-only |
+| RoutingProvider abstraction | ✅ | [backend/src/modules/routing/providers/](../../../backend/src/modules/routing/providers/) |
+| Domain events constants | ✅ | [backend/src/common/events.constants.ts](../../../backend/src/common/events.constants.ts) |
+| Response envelope + requestId + Pino | ✅ | [backend/src/common/](../../../backend/src/common/) |
+| Prisma schema по §9 | ✅ | [backend/prisma/schema.prisma](../../../backend/prisma/schema.prisma), все таблицы с `company_id/created_at/updated_at` |
+| Swagger `/api/docs` | ✅ | [backend/src/app.setup.ts](../../../backend/src/app.setup.ts) |
+| Bull queues + Socket.io gateway | ✅ | [backend/src/modules/realtime/](../../../backend/src/modules/realtime/) |
+| Backend тесты | ✅ | 56 suites / 279 tests passing, `tsc --noEmit` clean |
+| Frontend стек по §2 | ✅ | [frontend/package.json](../../../frontend/package.json) — Vite/React/TanStack/Zustand/shadcn/Tailwind |
+| Map-first dispatcher UI | ✅ | [frontend/src/features/dispatcher/](../../../frontend/src/features/dispatcher/) |
+| Защищённые роуты с RBAC | ✅ | [frontend/src/pages/app-router.tsx](../../../frontend/src/pages/app-router.tsx) |
+| Frontend тесты + ts-check | ✅ | 4 файла / 10 тестов passing, `tsc --noEmit` clean |
+
+### Что плохо и надо переделать
+
+| # | Проблема | Серьёзность | Нарушение CLAUDE.md |
+|---|---|---|---|
+| A1 | Параллельный `apps/api` на Express вместо NestJS | критично | §2 stack, §22 |
+| A2 | Параллельный `apps/web` на Next.js вместо Vite/React | критично | §2 stack, §3 (запрет миграций между Vite/Next) |
+| A3 | Рутовый `npm run dev` запускает `apps/api` + `apps/map`, а не канонический `backend` + `frontend` | критично | сбивает разработчика и CI |
+| A4 | 139 незакоммиченных модифицированных файлов (M в обоих стеках) | высоко | §22 git, §17 «не оставляй большие изменения без commit» |
+| A5 | Нет `.github/workflows/` — Phase 10 целиком открыта | средне | §19 CI/CD |
+| A6 | Phase 9 frontend-тесты (9.2b/c/d) — только «создана», не реализованы | средне | §17 testing convention |
+| A7 | Канонический frontend не содержит monitoring/SLA/alerts pages, которые есть в `apps/web` | средне | §10 «диспетчер видит проблему и действует» |
+| A8 | Канонический frontend не имеет страницы создания заказа (есть только на `apps/web`) | средне | dispatcher должен быстро создавать заказ |
+| A9 | В `frontend/src/features/orders/` пусто — нет orders UI вне карты | низко | UX полнота |
+| A10 | Дубль prisma-схем (`apps/api/prisma/schema.prisma` ≠ `backend/prisma/schema.prisma`) — риск дрейфа | высоко | §10 migrations |
+| A11 | Нет E2E smoke-теста на полный flow (login → order → route → assign) | средне | §17 |
+| A12 | Sentry/error-tracking не подключён | низко | §14 observability |
+| A13 | Stub-папки `ai/analytics/dispatchers/kpi/schedules` пустые (не блок — это Phase 2 placeholder, но нужно явно подтвердить и оставить README) | низко | §15, §18 phase 2 |
+
+### План — декомпозиция следующих шагов
+
+#### Phase 11 — Stack alignment & cleanup (priority 1, до любых новых фич)
+
+| Task ID | Название | Исполнитель | Статус | Зависит от | Описание |
+|---------|----------|-------------|--------|------------|----------|
+| 11.8a | Pre-commit зелёный билд | backend-implementer | завершена | — | `cd backend && npm run lint && npx tsc --noEmit && npm test`. При красном — fix-up до коммита; если быстро не чинится — wip-ветка с пометкой в README. **Самый первый шаг.** |
+| 11.8b | Коммит существующих изменений | backend-implementer | завершена | 11.8a | Серия коммитов по доменам: `chore(backend): commit pending common/...`, `chore(backend): commit pending modules/auth changes`, ... `chore(frontend): commit pending features/...`. 140 файлов: 94 backend + 27 frontend + 9 apps + 2 .claude |
+| 11.3 | Архивная ветка `legacy/apps-stack` | backend-implementer | создана | 11.8b | Создать ветку с текущим состоянием `apps/`, push в origin для истории |
+| 11.1 | Аудит уникальной ценности `apps/web` | reviewer | создана | 11.3 | Сравнить блоки `apps/web/src/components/{monitoring,sla,orders,users,integrations,routes,platform,ai,map}` с `frontend/src/features/*`. Все 7 уникальных блоков мигрировать (по решению пользователя): AI-панель (4 файла), Platform admin (impersonation, companies-table), Routes management, Order detail+history+actions, Map advanced (control-bar, selected-order-overlay), Integrations расширенные, Users расширенные |
+| 11.2 | Аудит `apps/api` vs `backend` | reviewer | создана | 11.3 | Явно сравнить три модуля без аналога в backend: `access`, `platform`, `tenant-provisioning`. Зафиксировать список эндпоинтов и DTO для миграции. Решить, не дублирует ли `access` функциональность `auth` |
+| 11.4a | Next.js → Vite адаптационный pattern | frontend-implementer | создана | 11.1 | Чек-лист трансформаций: убрать `'use client'`; `next/link` → `react-router-dom Link`; `useRouter` → `useNavigate/useLocation`; `next/image` → `<img>`; server actions → TanStack Query mutations. Реализовать reference-pattern на одном компоненте (`monitoring-shell`), зафиксировать commit |
+| 11.4 | Миграция уникальных UI-фич из `apps/web` в `frontend/` | frontend-implementer | создана | 11.4a | По блокам в порядке приоритета: (1) monitoring/sla/orders detail/users — MVP-критичные; (2) routes management, integrations расширенные; (3) platform admin (companies, impersonation); (4) AI-панель (UI-only, без backend). Все компоненты должны использовать существующие `http-client.ts`, `socket-client.ts`, `useOrders/useCouriers/useRoutes` хуки |
+| 11.5 | Миграция platform/super-admin из `apps/api` в backend | backend-implementer | создана | 11.2 | Создать `backend/src/modules/platform/` (CRUD companies на платформенном уровне, list, suspend, impersonation token) и `backend/src/modules/tenant-provisioning/` (создание company + admin + дефолтные настройки). По итогам 11.2 решить судьбу `access`. Permissions добавить в `permission-matrix.ts` |
+| 11.6 | Удаление `apps/api`, `apps/web`, `apps/map` | backend-implementer | создана | 11.3, 11.4, 11.5 | `git rm -r apps/api apps/web apps/map`. По решению пользователя `apps/map` тоже удаляется (Yandex Maps уже в каноническом frontend). После удаления проверить, что `apps/` пуста, и удалить саму папку. Удалить дубль prisma-схем |
+| 11.7 | Корневой `package.json` — scripts | backend-implementer | создана | 11.6 | Заменить scripts: `dev: concurrently npm:dev:backend npm:dev:frontend`, `dev:backend: cd backend && npm run start:dev`, `dev:frontend: cd frontend && npm run dev`. Корневые `lint`, `test`, `typecheck`, `build` проксируют в обе подпапки. Удалить `serve` и подобные dependency, оставшиеся от apps/map |
+| 11.9 | Обновление `README.md` с инструкциями запуска | backend-implementer | создана | 11.7 | Чётко: `npm run dev` (root) → backend:3000 + frontend:5173, ссылки на `/api/docs`, `/health`, требования (Node, Postgres, Redis), env-файлы |
+| 11.10 | Stub-модули MVP: явное решение | backend-implementer | создана | 11.7 | Реализовать минимальный `dispatchers` модуль (controller `GET /dispatchers` для assignment dropdown) — §7 CLAUDE.md требует в MVP. В `ai/`, `analytics/`, `kpi/` положить `README.md` с пометкой "Phase 2 placeholder by design" вместо `.gitkeep`. `schedules` модуль вынесен в Phase 12.8 |
+
+**Deliverable:** Один канонический стек, рутовый `npm run dev` поднимает backend+frontend, все изменения закоммичены, `apps/api`/`apps/web`/`apps/map` удалены, README актуален, минимальный `dispatchers` модуль работает.
+
+---
+
+#### Phase 9 (доделать) — Frontend tests
+
+| Task ID | Название | Исполнитель | Статус | Зависит от | Описание |
+|---------|----------|-------------|--------|------------|----------|
+| 9.2b | usePermissions tests | frontend-implementer | создана | 6.3c | Покрыть все три роли × ключевые permission-keys, edge: отсутствующий user, role unknown |
+| 9.2c | Payment rules constructor tests | frontend-implementer | создана | 8.2a | Form-валидация Zod, добавление/удаление правил, симуляция расчёта (mock) |
+| 9.2d | Order status display tests | frontend-implementer | создана | 7.1b | `order-status-badge` для каждого `OrderStatus`, цветовая кодировка, локализация |
+| 9.2e | Dispatcher map smoke test | frontend-implementer | создана | 7.1a | Mock Yandex API, проверить рендер маркеров, кликов, фильтра по дате |
+| 9.2f | Realtime hook tests | frontend-implementer | создана | 7.3a | `use-dispatcher-realtime` — mock socket, проверить invalidation TanStack Query при `order:status_changed` |
+| 9.2g | Smoke-тесты мигрированных компонентов | frontend-implementer | создана | 11.4 | Минимальный render-тест для каждого мигрированного блока: order-detail-card, order-history-list, monitoring-shell, execution-summary, sla-status-badge, deadline-badge, users-table, change-role-modal, integrations create-form, platform companies-table, AI chat-input. Не покрывают логику — только smoke (mount без падений) |
+
+**Deliverable:** Frontend coverage критических путей + smoke на мигрированном.
+
+---
+
+#### Phase 10 — CI/CD (priority 2, после 11)
+
+| Task ID | Название | Исполнитель | Статус | Зависит от | Описание |
+|---------|----------|-------------|--------|------------|----------|
+| 10.1a | GitHub Actions: lint workflow | backend-implementer | создана | 11.7 | `.github/workflows/ci.yml` — eslint в backend и frontend параллельно |
+| 10.1b | GitHub Actions: test workflow | backend-implementer | создана | 10.1a | jest backend + **vitest** frontend (явно указано), postgres+redis services с healthcheck перед прогоном интеграционных |
+| 10.1c | GitHub Actions: build workflow | backend-implementer | создана | 10.1a | `nest build` + `vite build`, `tsc --noEmit` в обеих подпапках, артефакты в cache |
+| 10.1d | Branch protection on main | backend-implementer | создана | 10.1c | Required checks: lint, test, build |
+| 10.2a | Railway PostgreSQL + Redis | backend-implementer | создана | — | Добавить services в Railway-проекте, прокинуть `DATABASE_URL`, `REDIS_URL` |
+| 10.2b | Railway backend deploy | backend-implementer | создана | 10.2a, 10.1c | `deploy-backend.yml` на push в main, release script: `prisma migrate deploy` → `node dist/main.js`. Проверить что миграции idempotent |
+| 10.2c | Backend prod env-vars | backend-implementer | создана | 10.2a | JWT secrets, Yandex API key, CORS_ORIGIN, LOG_LEVEL, SENTRY_DSN, RATE_LIMIT_* |
+| 10.2d | Idempotent staging seed | backend-implementer | создана | 10.2a | `npm run seed:staging` создаёт демо-компанию + admin/dispatcher/courier user'ов + 1 зону + несколько заказов. Идемпотентен (upsert по email/external-id), безопасен к повторному запуску |
+| 10.3a | Vercel frontend project | frontend-implementer | создана | — | Подключить репозиторий к Vercel, выставить root → `frontend` |
+| 10.3b | Vercel deploy + SPA fallback | frontend-implementer | создана | 10.3a, 10.1c | `vercel.json` с `rewrites: [{ source: "/(.*)", destination: "/" }]` для SPA fallback (иначе react-router 404 на refresh). Preview на PR. Опционально rewrite `/api/*` → `VITE_API_URL` |
+| 10.3c | Frontend prod env-vars | frontend-implementer | создана | 10.3a | `VITE_API_URL`, `VITE_WS_URL`, `VITE_YANDEX_MAPS_API_KEY`, `VITE_SENTRY_DSN` |
+
+**Deliverable:** Push в main → автодеплой обоих частей. PR требует зелёный CI.
+
+---
+
+#### Phase 12 — MVP gaps (priority 3, dispatcher productivity)
+
+| Task ID | Название | Исполнитель | Статус | Зависит от | Описание |
+|---------|----------|-------------|--------|------------|----------|
+| 12.1 | Wire monitoring к live-обновлениям | frontend-implementer | создана | 11.4 | Mонитоring уже мигрирован в 11.4 (`monitoring-shell`, `execution-summary`, `courier-progress-panel`). Здесь — подключить к Socket.io: invalidate на `order:status_changed`, `route:updated`, `courier:location_updated`. Плотный лайв-экран, не CRM-таблица |
+| 12.2 | Quick order create на карте | frontend-implementer | создана | 11.4 | Кнопка `+` на map-shell → modal: адрес (Yandex Geocoder), время, customer info. POST /orders, маркер появляется сразу. Без перехода на отдельную страницу. Учесть, что `create-order-form` уже мигрирован в 11.4 — здесь только встроить как модалку поверх карты |
+| 12.3 | Drag-and-drop заказ → курьер | frontend-implementer | создана | 7.1e | На карте/в правой панели заказы можно перетащить на курьера в нижней панели. PATCH /orders/:id с `assignedCourierId`. Optimistic update |
+| 12.4 | SLA-индикаторы на маркерах карты | frontend-implementer | создана | 12.1 | После 11.4 уже есть `sla-status-badge`, `deadline-badge`, `sla-summary-widget`. Здесь — встроить эти компоненты в layer заказов на карте: цвет маркера по SLA-уровню (green → yellow → red), считать клиентом из `time_window_to` |
+| 12.5 | Notifications inbox панель | frontend-implementer | создана | 4.3 | Top-bar bell → выпадающий список последних 20 событий (создано/назначено/проблема). Read/unread state в Zustand |
+| 12.6 | Smoke E2E (Playwright) | backend-implementer | создана | 11.7 | Один happy-path: register → login → create order → build route → assign courier → status change → payment calc. CI-friendly |
+| 12.7 | Backend module: dispatchers (расширение) | backend-implementer | создана | 11.10 | Минимум уже создан в 11.10. Здесь расширить: dispatcher CRUD, привязка к зонам, статус online/offline. Без KPI |
+| 12.8 | Schedules / смены MVP (опционально) | backend+frontend | обсуждается | 2.3 | §7 + §8 CLAUDE.md требуют `schedules` модуль с shift state machine: `scheduled → confirmed → active → completed/no_show/cancelled`. Backend: модуль + таблица `shifts` + state machine + canTransition. Frontend: страница смен с расписанием курьеров. **Решение о включении в MVP — за пользователем** (см. "Открытые вопросы") |
+
+**Deliverable:** Диспетчер делает полный day-of-work без переключения экранов и таблиц.
+
+---
+
+#### Phase 13 — Production readiness
+
+| Task ID | Название | Исполнитель | Статус | Зависит от | Описание |
+|---------|----------|-------------|--------|------------|----------|
+| 13.1 | Sentry backend | backend-implementer | создана | 10.2c | `@sentry/nestjs`, `SENTRY_DSN`, привязка к global exception filter, теги companyId/userId |
+| 13.2 | Sentry frontend | frontend-implementer | создана | 10.3c | `@sentry/react`, source maps, теги пользователя |
+| 13.3 | Production hardening | backend-implementer | создана | 10.2 | Усилить throttler-лимиты, CORS whitelist по env, JWT secrets из vault, проверить httpOnly+SameSite=lax |
+| 13.4 | Staging deploy + smoke | backend-implementer | создана | 10.2, 10.3 | Развернуть staging-инстанс, прогнать E2E из 12.6, отметить gaps |
+| 13.5 | Backup policy для Postgres | backend-implementer | создана | 10.2a | Railway daily snapshots + retention 7 дней; документировать процедуру restore |
+| 13.6 | Health-check мониторинг | backend-implementer | создана | 1.4 | Подключить uptime-проверку (UptimeRobot/healthchecks.io) на `/health/ready` |
+
+**Deliverable:** Продакшн-установка готова к первому пилотному клиенту.
+
+---
+
+### Сводка нового плана
+
+| Фаза | Задач | Backend | Frontend | Reviewer | Статус |
+|------|-------|---------|----------|----------|--------|
+| Phase 11 (cleanup) | 9 | 5 | 1 | 2 | создана |
+| Phase 9 (доделать) | 5 | 0 | 5 | 0 | создана |
+| Phase 10 (CI/CD) | 10 | 7 | 3 | 0 | создана |
+| Phase 12 (MVP gaps) | 7 | 2 | 5 | 0 | создана |
+| Phase 13 (prod) | 6 | 5 | 1 | 0 | создана |
+| **Итого новых** | **37** | **19** | **15** | **2** | — |
+
+### Рекомендованный порядок исполнения
+
+1. **Phase 11 целиком** (без неё CI и любые новые фичи опасны — будут пересекаться два стека).
+2. **Phase 9 доделать** (быстрый win, защищает frontend от регрессий после 11.4).
+3. **Phase 10** (без CI Phase 12/13 нельзя безопасно деплоить).
+4. **Phase 12** (закрывает MVP-разрыв для диспетчера).
+5. **Phase 13** (готовим прод).
+
+### Риски
+
+- **R1.** Удаление `apps/web` без 11.4 потеряет UX-фичи (monitoring, SLA, order create) → 11.4 обязателен **до** 11.6.
+- **R2.** 139 незакоммиченных файлов могут содержать незавершённую работу — 11.8 надо сделать раньше любых rm/restructure.
+- **R3.** Дубль prisma-схем (`apps/api` vs `backend`) — `apps/api/prisma/schema.prisma` короче (91 строка) и старее; единственный источник истины — `backend/prisma/schema.prisma`. Удаление apps/api устраняет дубль.
+- **R4.** Yandex API key в проде должен быть свой (не test-key) — отдельная задача в 10.2c.
