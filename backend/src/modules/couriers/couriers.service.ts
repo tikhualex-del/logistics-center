@@ -101,7 +101,9 @@ export class CouriersService {
       }
 
       if (currentCourier.status === CourierStatus.inactive) {
-        throw new BadRequestException('Inactive courier profile cannot be toggled');
+        throw new BadRequestException(
+          'Inactive courier profile cannot be toggled',
+        );
       }
 
       if (currentCourier.status === CourierStatus.suspended) {
@@ -150,7 +152,10 @@ export class CouriersService {
         throw new NotFoundException('Courier not found');
       }
 
-      if (actorRole === UserRole.courier && currentCourier.user_id !== actorUserId) {
+      if (
+        actorRole === UserRole.courier &&
+        currentCourier.user_id !== actorUserId
+      ) {
         throw new ForbiddenException(
           'Courier can update location only for their own profile',
         );

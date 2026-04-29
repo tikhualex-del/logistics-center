@@ -64,7 +64,10 @@ describe('ZonesController', () => {
     await expect(controller.getZone('company-1', 'zone-1')).resolves.toEqual(
       zoneResponse,
     );
-    expect(mockZonesService.getZone).toHaveBeenCalledWith('company-1', 'zone-1');
+    expect(mockZonesService.getZone).toHaveBeenCalledWith(
+      'company-1',
+      'zone-1',
+    );
   });
 
   it('creates a zone inside tenant scope', async () => {

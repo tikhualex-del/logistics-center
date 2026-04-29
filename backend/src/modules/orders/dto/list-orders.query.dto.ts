@@ -13,7 +13,7 @@ export class ListOrdersQueryDto {
     example: '2026-04-16',
     description: 'Filter by scheduled date (UTC day)',
   })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsOptional()
@@ -21,7 +21,7 @@ export class ListOrdersQueryDto {
   declare date?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsOptional()

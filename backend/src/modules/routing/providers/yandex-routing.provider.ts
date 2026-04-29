@@ -41,13 +41,21 @@ export class YandexRoutingProvider implements RoutingProvider {
     }
 
     const orderedPoints = orderRoutePoints(points, options.optimizeWaypoints);
-    const requestPoints = buildRequestPoints(orderedPoints, options.returnToStart);
+    const requestPoints = buildRequestPoints(
+      orderedPoints,
+      options.returnToStart,
+    );
     const payload = await this.fetchJson(
       this.buildRoutingUrl(requestPoints, options),
       'route build',
     );
 
-    return parseYandexRouteResponse(payload, orderedPoints, requestPoints, options);
+    return parseYandexRouteResponse(
+      payload,
+      orderedPoints,
+      requestPoints,
+      options,
+    );
   }
 
   async calculateDistance(
@@ -137,8 +145,10 @@ export class YandexRoutingProvider implements RoutingProvider {
 
   private getProviderMode(): RoutingProviderMode {
     const rawMode =
-      this.configService.get<string>('ROUTING_PROVIDER_MODE')?.trim().toLowerCase() ??
-      'auto';
+      this.configService
+        .get<string>('ROUTING_PROVIDER_MODE')
+        ?.trim()
+        .toLowerCase() ?? 'auto';
 
     if (rawMode === 'mock' || rawMode === 'yandex') {
       return rawMode;
@@ -156,7 +166,9 @@ export class YandexRoutingProvider implements RoutingProvider {
   }
 
   private getMapsApiKey(): string | undefined {
-    return normalizeString(this.configService.get<string>('YANDEX_MAPS_API_KEY'));
+    return normalizeString(
+      this.configService.get<string>('YANDEX_MAPS_API_KEY'),
+    );
   }
 
   private getRoutingBaseUrl(): string {
@@ -254,9 +266,15 @@ function validateRoutePoints(points: RoutePoint[]): void {
   }
 }
 
-function buildMockRoute(points: RoutePoint[], options: RouteOptions): RouteResult {
+function buildMockRoute(
+  points: RoutePoint[],
+  options: RouteOptions,
+): RouteResult {
   const orderedPoints = orderRoutePoints(points, options.optimizeWaypoints);
-  const requestPoints = buildRequestPoints(orderedPoints, options.returnToStart);
+  const requestPoints = buildRequestPoints(
+    orderedPoints,
+    options.returnToStart,
+  );
   const legs = buildMockLegs(requestPoints, options.mode);
   const distanceMeters = Math.round(
     legs.reduce((total, leg) => total + leg.distanceMeters, 0),
@@ -282,10 +300,7 @@ function buildMockRoute(points: RoutePoint[], options: RouteOptions): RouteResul
   };
 }
 
-function buildMockDistance(
-  from: Coordinates,
-  to: Coordinates,
-): DistanceResult {
+function buildMockDistance(from: Coordinates, to: Coordinates): DistanceResult {
   const distanceMeters = haversineDistanceMeters(from, to);
 
   return {
@@ -322,10 +337,10 @@ function orderRoutePoints(
   }
 
   const [startPoint, ...remaining] = points;
-  const orderedPoints = [startPoint!];
+  const orderedPoints = [startPoint];
 
   while (remaining.length > 0) {
-    const currentPoint = orderedPoints[orderedPoints.length - 1]!;
+    const currentPoint = orderedPoints[orderedPoints.length - 1];
     let nearestIndex = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
 
@@ -342,7 +357,7 @@ function orderRoutePoints(
     });
 
     const [nextPoint] = remaining.splice(nearestIndex, 1);
-    orderedPoints.push(nextPoint!);
+    orderedPoints.push(nextPoint);
   }
 
   return orderedPoints;
@@ -356,7 +371,7 @@ function buildRequestPoints(
     return orderedPoints;
   }
 
-  return [...orderedPoints, orderedPoints[0]!];
+  return [...orderedPoints, orderedPoints[0]];
 }
 
 function buildMockLegs(
@@ -364,7 +379,7 @@ function buildMockLegs(
   mode: RouteOptions['mode'],
 ): RouteLeg[] {
   return points.slice(0, -1).map((point, index) => {
-    const nextPoint = points[index + 1]!;
+    const nextPoint = points[index + 1];
     const distanceMeters = haversineDistanceMeters(
       point.coordinates,
       nextPoint.coordinates,
@@ -434,7 +449,9 @@ function parseYandexRouteResponse(
     Math.round(legs.reduce((total, leg) => total + leg.durationSeconds, 0));
   const polyline =
     readCoordinatesCollection(route['geometry']) ??
-    readCoordinatesCollection(getNestedValue(route, ['overview', 'geometry'])) ??
+    readCoordinatesCollection(
+      getNestedValue(route, ['overview', 'geometry']),
+    ) ??
     requestPoints.map((point) => point.coordinates);
 
   return {
@@ -464,7 +481,9 @@ function mapYandexLeg(
   const toPoint = points[index + 1];
 
   if (!fromPoint || !toPoint) {
-    throw new Error('Yandex route response leg count does not match request points');
+    throw new Error(
+      'Yandex route response leg count does not match request points',
+    );
   }
 
   return {
@@ -481,16 +500,20 @@ function mapYandexLeg(
         haversineDistanceMeters(fromPoint.coordinates, toPoint.coordinates) /
           getAverageMetersPerSecond('driving'),
       ),
-    geometry:
-      readCoordinatesCollection(leg['geometry']) ??
-      readCoordinatesCollection(getNestedValue(leg, ['overview', 'geometry'])) ??
-      [fromPoint.coordinates, toPoint.coordinates],
+    geometry: readCoordinatesCollection(leg['geometry']) ??
+      readCoordinatesCollection(
+        getNestedValue(leg, ['overview', 'geometry']),
+      ) ?? [fromPoint.coordinates, toPoint.coordinates],
   };
 }
 
 function parseYandexGeocodeResponse(payload: YandexJson): Coordinates {
   const featureMember = readArray(
-    getNestedValue(payload, ['response', 'GeoObjectCollection', 'featureMember']),
+    getNestedValue(payload, [
+      'response',
+      'GeoObjectCollection',
+      'featureMember',
+    ]),
   );
 
   const firstGeoObject = featureMember[0];
@@ -557,7 +580,9 @@ function serializeWaypoints(points: RoutePoint[]): string {
 
 function readCoordinatesCollection(value: unknown): Coordinates[] | null {
   const coordinates = readArray(
-    isRecord(value) ? value['coordinates'] ?? value['geometry'] ?? value : value,
+    isRecord(value)
+      ? (value['coordinates'] ?? value['geometry'] ?? value)
+      : value,
   );
 
   if (coordinates.length === 0) {
@@ -626,10 +651,7 @@ function readArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function getNestedValue(
-  source: unknown,
-  path: string[],
-): unknown {
+function getNestedValue(source: unknown, path: string[]): unknown {
   let current = source;
 
   for (const segment of path) {
@@ -661,10 +683,7 @@ function normalizeString(value: string | undefined): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-function haversineDistanceMeters(
-  from: Coordinates,
-  to: Coordinates,
-): number {
+function haversineDistanceMeters(from: Coordinates, to: Coordinates): number {
   const earthRadiusMeters = 6_371_000;
   const latitudeDelta = degreesToRadians(to.latitude - from.latitude);
   const longitudeDelta = degreesToRadians(to.longitude - from.longitude);

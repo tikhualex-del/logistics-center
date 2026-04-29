@@ -11,6 +11,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { stringifyUnknown } from '../../../common/utils/stringify-unknown';
 
 export class UpdateOrderDto {
   @ApiPropertyOptional({ example: 'crm-order-123', nullable: true })
@@ -160,7 +161,7 @@ function normalizeNullableDate(value: unknown): Date | null | undefined {
     return value;
   }
 
-  return new Date(String(value));
+  return new Date(stringifyUnknown(value));
 }
 
 function normalizeNullableObject(

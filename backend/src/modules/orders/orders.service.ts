@@ -156,7 +156,10 @@ export class OrdersService {
     });
   }
 
-  async getOrder(companyId: string, orderId: string): Promise<OrderResponseDto> {
+  async getOrder(
+    companyId: string,
+    orderId: string,
+  ): Promise<OrderResponseDto> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const order = await this.prisma.order.findFirst({
         where: { id: orderId },
@@ -204,7 +207,8 @@ export class OrdersService {
       if (dto.externalId !== undefined) data.external_id = dto.externalId;
       if (dto.orderNumber !== undefined) data.order_number = dto.orderNumber;
       if (dto.customerName !== undefined) data.customer_name = dto.customerName;
-      if (dto.customerPhone !== undefined) data.customer_phone = dto.customerPhone;
+      if (dto.customerPhone !== undefined)
+        data.customer_phone = dto.customerPhone;
       if (dto.deliveryAddress !== undefined) {
         data.delivery_address = dto.deliveryAddress;
       }
@@ -215,11 +219,13 @@ export class OrdersService {
         data.delivery_longitude = toDecimal(dto.deliveryLongitude);
       }
       if (dto.comment !== undefined) data.comment = dto.comment;
-      if (dto.scheduledDate !== undefined) data.scheduled_date = dto.scheduledDate;
+      if (dto.scheduledDate !== undefined)
+        data.scheduled_date = dto.scheduledDate;
       if (dto.timeWindowFrom !== undefined) {
         data.time_window_from = dto.timeWindowFrom;
       }
-      if (dto.timeWindowTo !== undefined) data.time_window_to = dto.timeWindowTo;
+      if (dto.timeWindowTo !== undefined)
+        data.time_window_to = dto.timeWindowTo;
       if (dto.zoneId !== undefined) data.zone_id = dto.zoneId;
       if (dto.assignedCourierId !== undefined) {
         data.assigned_courier_id = dto.assignedCourierId;

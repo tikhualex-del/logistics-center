@@ -52,7 +52,11 @@ export class CouriersController {
     @Param('id', new ParseUUIDPipe()) courierId: string,
     @Body() dto: UpdateCourierStatusDto,
   ): Promise<CourierResponseDto> {
-    return await this.couriersService.updateCourierStatus(companyId, courierId, dto);
+    return await this.couriersService.updateCourierStatus(
+      companyId,
+      courierId,
+      dto,
+    );
   }
 
   @Patch(':id/location')

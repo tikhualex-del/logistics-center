@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -20,6 +21,7 @@ import { RequirePermission } from '../../common/decorators/require-permission.de
 import { Roles } from '../../common/decorators/roles.decorator';
 import { BuildRouteDto } from './dto/build-route.dto';
 import { ListRoutesQueryDto } from './dto/list-routes.query.dto';
+import { RoutePreviewResponseDto } from './dto/route-preview-response.dto';
 import { RouteResponseDto } from './dto/route-response.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { RoutingService } from './routing.service';
@@ -40,6 +42,16 @@ export class RoutingController {
     @Body() dto: BuildRouteDto,
   ): Promise<RouteResponseDto> {
     return await this.routingService.buildRoute(companyId, userId, dto);
+  }
+
+  @Post('preview')
+  @RequirePermission('edit:routes')
+  @ApiCreatedResponse({ type: RoutePreviewResponseDto })
+  async previewRoute(
+    @CurrentUser('companyId') companyId: string,
+    @Body() dto: BuildRouteDto,
+  ): Promise<RoutePreviewResponseDto> {
+    return await this.routingService.previewRoute(companyId, dto);
   }
 
   @Get()
@@ -71,6 +83,22 @@ export class RoutingController {
     @Param('id', new ParseUUIDPipe()) routeId: string,
     @Body() dto: UpdateRouteDto,
   ): Promise<RouteResponseDto> {
-    return await this.routingService.updateRoute(companyId, userId, routeId, dto);
+    return await this.routingService.updateRoute(
+      companyId,
+      userId,
+      routeId,
+      dto,
+    );
+  }
+
+  @Delete(':id')
+  @RequirePermission('edit:routes')
+  @ApiOkResponse({ type: RouteResponseDto })
+  async deleteRoute(
+    @CurrentUser('companyId') companyId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id', new ParseUUIDPipe()) routeId: string,
+  ): Promise<RouteResponseDto> {
+    return await this.routingService.deleteRoute(companyId, userId, routeId);
   }
 }

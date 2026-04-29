@@ -111,9 +111,9 @@ describe('CouriersService', () => {
   it('throws when courier is missing', async () => {
     mockPrismaService.courier.findFirst.mockResolvedValue(null);
 
-    await expect(service.getCourier('company-1', 'missing-courier')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      service.getCourier('company-1', 'missing-courier'),
+    ).rejects.toThrow(NotFoundException);
   });
 
   it('maps online toggle to available status', async () => {

@@ -73,7 +73,12 @@ export class OrdersController {
     @Param('id', new ParseUUIDPipe()) orderId: string,
     @Body() dto: UpdateOrderDto,
   ): Promise<OrderResponseDto> {
-    return await this.ordersService.updateOrder(companyId, userId, orderId, dto);
+    return await this.ordersService.updateOrder(
+      companyId,
+      userId,
+      orderId,
+      dto,
+    );
   }
 
   @Patch(':id/status')

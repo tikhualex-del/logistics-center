@@ -129,7 +129,9 @@ describe('OrdersController', () => {
       ...orderResponse,
       status: OrderStatus.confirmed,
     };
-    mockOrdersService.transitionOrderStatus.mockResolvedValue(transitionedOrder);
+    mockOrdersService.transitionOrderStatus.mockResolvedValue(
+      transitionedOrder,
+    );
 
     await expect(
       controller.updateOrderStatus(

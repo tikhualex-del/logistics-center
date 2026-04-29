@@ -55,7 +55,9 @@ function isLinearRing(value: unknown): value is GeoJsonLinearRing {
     return false;
   }
 
-  return firstPoint.every((coordinate, index) => coordinate === lastPoint[index]);
+  return firstPoint.every(
+    (coordinate, index) => coordinate === lastPoint[index],
+  );
 }
 
 function isPosition(value: unknown): value is GeoJsonPosition {

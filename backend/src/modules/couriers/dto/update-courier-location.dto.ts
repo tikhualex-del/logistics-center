@@ -4,7 +4,7 @@ import { IsNumber, Max, Min } from 'class-validator';
 
 export class UpdateCourierLocationDto {
   @ApiProperty({ example: 55.7558 })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? Number(value.trim()) : value,
   )
   @IsNumber(
@@ -16,7 +16,7 @@ export class UpdateCourierLocationDto {
   declare latitude: number;
 
   @ApiProperty({ example: 37.6173 })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? Number(value.trim()) : value,
   )
   @IsNumber(

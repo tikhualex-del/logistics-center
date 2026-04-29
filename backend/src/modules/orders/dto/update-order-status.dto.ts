@@ -15,7 +15,7 @@ export class UpdateOrderStatusDto {
   declare status: OrderStatus;
 
   @ApiPropertyOptional({ example: 'Customer confirmed delivery by phone' })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsOptional()

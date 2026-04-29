@@ -12,6 +12,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { stringifyUnknown } from '../../../common/utils/stringify-unknown';
 
 export class CreateOrderDto {
   @ApiPropertyOptional({ example: 'crm-order-123' })
@@ -42,7 +43,7 @@ export class CreateOrderDto {
   declare customerPhone?: string;
 
   @ApiProperty({ example: 'Moscow, Tverskaya 1' })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString()
@@ -150,5 +151,5 @@ function normalizeOptionalDate(value: unknown): Date | undefined {
     return value;
   }
 
-  return new Date(String(value));
+  return new Date(stringifyUnknown(value));
 }

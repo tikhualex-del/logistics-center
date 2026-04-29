@@ -177,7 +177,10 @@ export class ZonesService {
     });
   }
 
-  async deleteZone(companyId: string, zoneId: string): Promise<ZoneResponseDto> {
+  async deleteZone(
+    companyId: string,
+    zoneId: string,
+  ): Promise<ZoneResponseDto> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const currentZone = await this.prisma.zone.findFirst({
         where: { id: zoneId },

@@ -55,9 +55,9 @@ describe('CouriersController', () => {
   it('returns courier detail in tenant scope', async () => {
     mockCouriersService.getCourier.mockResolvedValue(courierResponse);
 
-    await expect(controller.getCourier('company-1', 'courier-1')).resolves.toEqual(
-      courierResponse,
-    );
+    await expect(
+      controller.getCourier('company-1', 'courier-1'),
+    ).resolves.toEqual(courierResponse);
     expect(mockCouriersService.getCourier).toHaveBeenCalledWith(
       'company-1',
       'courier-1',

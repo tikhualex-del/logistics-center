@@ -9,11 +9,13 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma, RouteStatus, type OrderStatus } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { getTenantContextRequestId } from '../../prisma/tenant-context.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BuildRouteDto } from './dto/build-route.dto';
 import { ListRoutesQueryDto } from './dto/list-routes.query.dto';
 import { RoutePointResponseDto } from './dto/route-point-response.dto';
+import { RoutePreviewResponseDto } from './dto/route-preview-response.dto';
 import { RouteResponseDto } from './dto/route-response.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { InvalidRouteStateTransitionException } from './exceptions/invalid-route-state-transition.exception';
@@ -96,7 +98,9 @@ const courierForRouteSelect = {
 } satisfies Prisma.CourierSelect;
 
 type RouteRecord = Prisma.RouteGetPayload<{ select: typeof routeSelect }>;
-type RouteOrderRecord = Prisma.OrderGetPayload<{ select: typeof orderForRouteSelect }>;
+type RouteOrderRecord = Prisma.OrderGetPayload<{
+  select: typeof orderForRouteSelect;
+}>;
 type RouteCourierRecord = Prisma.CourierGetPayload<{
   select: typeof courierForRouteSelect;
 }>;
@@ -197,6 +201,27 @@ export class RoutingService {
     });
   }
 
+  async previewRoute(
+    companyId: string,
+    dto: BuildRouteDto,
+  ): Promise<RoutePreviewResponseDto> {
+    return await this.prisma.runWithTenant(companyId, async () => {
+      const options = buildProviderOptions(dto);
+      const resolvedPlan = await this.resolveRoutePlan(
+        companyId,
+        dto.orderIds,
+        dto.courierId ?? null,
+        options,
+      );
+      const routeResult = await this.routingProvider.buildRoute(
+        resolvedPlan.providerPoints,
+        options,
+      );
+
+      return mapRoutePreview(routeResult);
+    });
+  }
+
   async listRoutes(
     companyId: string,
     query: ListRoutesQueryDto,
@@ -232,7 +257,10 @@ export class RoutingService {
     });
   }
 
-  async getRoute(companyId: string, routeId: string): Promise<RouteResponseDto> {
+  async getRoute(
+    companyId: string,
+    routeId: string,
+  ): Promise<RouteResponseDto> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const route = await this.prisma.route.findFirst({
         where: {
@@ -306,7 +334,8 @@ export class RoutingService {
           currentRoute.route_date,
         );
         const nextOrderIds =
-          dto.orderIds ?? currentRoute.route_points.map((point) => point.order_id);
+          dto.orderIds ??
+          currentRoute.route_points.map((point) => point.order_id);
         const nextCourierId =
           dto.courierId !== undefined ? dto.courierId : currentRoute.courier_id;
         const nextOptions = buildUpdatedRouteOptions(currentOptions, dto);
@@ -330,7 +359,10 @@ export class RoutingService {
               route_date: dto.routeDate ?? currentRoute.route_date,
               status: targetStatus,
               version: currentRoute.version + 1,
-              optimization_data: serializeOptimizationData(routeResult, nextOptions),
+              optimization_data: serializeOptimizationData(
+                routeResult,
+                nextOptions,
+              ),
               ...(dto.metadata !== undefined
                 ? {
                     metadata: (dto.metadata ??
@@ -429,6 +461,67 @@ export class RoutingService {
     });
   }
 
+  async deleteRoute(
+    companyId: string,
+    actorUserId: string,
+    routeId: string,
+  ): Promise<RouteResponseDto> {
+    return await this.prisma.runWithTenant(companyId, async () => {
+      const currentRoute = await this.prisma.route.findFirst({
+        where: {
+          id: routeId,
+          deleted_at: null,
+        },
+        select: routeSelect,
+      });
+
+      if (!currentRoute) {
+        throw new NotFoundException('Route not found');
+      }
+
+      ensureRouteDeletable(currentRoute.status);
+
+      if (!canTransitionRoute(currentRoute.status, RouteStatus.cancelled)) {
+        throw new InvalidRouteStateTransitionException(
+          currentRoute.status,
+          RouteStatus.cancelled,
+        );
+      }
+
+      const deletedRoute = await this.prisma.route.update({
+        where: { id: routeId },
+        data: {
+          status: RouteStatus.cancelled,
+          deleted_at: new Date(),
+        },
+        select: routeSelect,
+      });
+
+      this.logger.info(
+        {
+          routeId,
+          companyId,
+          deletedByUserId: actorUserId,
+        },
+        'Route deleted',
+      );
+
+      const route = mapRoute(deletedRoute);
+
+      await this.emitRouteCancelled({
+        routeId,
+        companyId,
+        actorUserId,
+        fromStatus: currentRoute.status,
+        toStatus: RouteStatus.cancelled,
+        requestId: getTenantContextRequestId() ?? null,
+        route,
+      });
+
+      return route;
+    });
+  }
+
   private async resolveRoutePlan(
     companyId: string,
     orderIds: string[],
@@ -451,7 +544,9 @@ export class RoutingService {
 
     if (orders.length !== uniqueOrderIds.length) {
       const foundOrderIds = new Set(orders.map((order) => order.id));
-      const missingOrderIds = uniqueOrderIds.filter((id) => !foundOrderIds.has(id));
+      const missingOrderIds = uniqueOrderIds.filter(
+        (id) => !foundOrderIds.has(id),
+      );
       throw new NotFoundException(
         `Orders not found: ${missingOrderIds.join(', ')}`,
       );
@@ -480,7 +575,8 @@ export class RoutingService {
       excludeRouteId,
     );
 
-    const ordersWithCoordinates = await this.resolveOrderCoordinates(orderedOrders);
+    const ordersWithCoordinates =
+      await this.resolveOrderCoordinates(orderedOrders);
     const courier = courierId
       ? await this.getCourierOrThrow(companyId, courierId)
       : null;
@@ -509,7 +605,9 @@ export class RoutingService {
         continue;
       }
 
-      const coordinates = await this.routingProvider.geocode(order.delivery_address);
+      const coordinates = await this.routingProvider.geocode(
+        order.delivery_address,
+      );
 
       await this.prisma.order.update({
         where: { id: order.id },
@@ -551,7 +649,7 @@ export class RoutingService {
     });
 
     if (conflictingRoutePoints.length > 0) {
-      const conflict = conflictingRoutePoints[0]!;
+      const conflict = conflictingRoutePoints[0];
       throw new ConflictException(
         `Order ${conflict.order_id} is already assigned to active route ${conflict.route_id}`,
       );
@@ -643,10 +741,12 @@ function mapRoute(route: RouteRecord): RouteResponseDto {
     : null;
   const provider =
     typeof optimizationData?.['provider'] === 'string'
-      ? (optimizationData['provider'] as string)
+      ? optimizationData['provider']
       : null;
   const totalDistanceMeters = readNumber(optimizationData?.['distanceMeters']);
-  const totalDurationSeconds = readNumber(optimizationData?.['durationSeconds']);
+  const totalDurationSeconds = readNumber(
+    optimizationData?.['durationSeconds'],
+  );
   const polyline = readCoordinatesArray(optimizationData?.['polyline']);
 
   return {
@@ -671,7 +771,23 @@ function mapRoute(route: RouteRecord): RouteResponseDto {
   };
 }
 
-function mapRoutePoint(point: RouteRecord['route_points'][number]): RoutePointResponseDto {
+function mapRoutePreview(
+  routeResult: ProviderRouteResult,
+): RoutePreviewResponseDto {
+  return {
+    totalDistanceMeters: routeResult.distanceMeters,
+    totalDurationSeconds: routeResult.durationSeconds,
+    provider: routeResult.provider,
+    polyline: routeResult.polyline.map((point) => ({
+      latitude: point.latitude,
+      longitude: point.longitude,
+    })),
+  };
+}
+
+function mapRoutePoint(
+  point: RouteRecord['route_points'][number],
+): RoutePointResponseDto {
   return {
     id: point.id,
     routeId: point.route_id,
@@ -898,11 +1014,23 @@ function routeHasPlanChanges(
 }
 
 function ensureRouteEditable(status: RouteStatus): void {
-  if (status !== RouteStatus.draft && status !== RouteStatus.planned) {
+  if (!isRouteEditableStatus(status)) {
     throw new BadRequestException(
       `Route with status "${status}" can no longer be manually edited`,
     );
   }
+}
+
+function ensureRouteDeletable(status: RouteStatus): void {
+  if (!isRouteEditableStatus(status)) {
+    throw new BadRequestException(
+      `Route with status "${status}" can no longer be deleted`,
+    );
+  }
+}
+
+function isRouteEditableStatus(status: RouteStatus): boolean {
+  return status === RouteStatus.draft || status === RouteStatus.planned;
 }
 
 function decimalToNumber(value: Prisma.Decimal | null): number | null {
@@ -1014,7 +1142,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -1031,5 +1161,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

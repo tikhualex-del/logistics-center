@@ -70,13 +70,14 @@ describe('ZonesService', () => {
     service = module.get<ZonesService>(ZonesService);
   });
 
-  it('lists tenant zones ordered by active state and creation date', async () => {
+  it('lists active tenant zones ordered by creation date', async () => {
     mockPrismaService.zone.findMany.mockResolvedValue([baseZone]);
 
     const result = await service.listZones('company-1');
 
     expect(mockPrismaService.zone.findMany).toHaveBeenCalledWith({
-      orderBy: [{ is_active: 'desc' }, { created_at: 'desc' }],
+      where: { is_active: true },
+      orderBy: [{ created_at: 'desc' }],
       select: expect.any(Object),
     });
     expect(result).toEqual([
@@ -95,7 +96,7 @@ describe('ZonesService', () => {
     const result = await service.getZone('company-1', 'zone-1');
 
     expect(mockPrismaService.zone.findFirst).toHaveBeenCalledWith({
-      where: { id: 'zone-1' },
+      where: { id: 'zone-1', is_active: true },
       select: expect.any(Object),
     });
     expect(result.id).toBe('zone-1');
@@ -165,7 +166,9 @@ describe('ZonesService', () => {
         ...baseZone,
         name: data.name ?? baseZone.name,
         color:
-          data.color !== undefined ? (data.color as string | null) : baseZone.color,
+          data.color !== undefined
+            ? (data.color as string | null)
+            : baseZone.color,
         base_rate: data.base_rate,
         is_active: data.is_active ?? baseZone.is_active,
       }),

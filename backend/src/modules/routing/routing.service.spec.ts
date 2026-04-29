@@ -1,7 +1,4 @@
-import {
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Prisma, RouteStatus } from '@prisma/client';
@@ -244,8 +241,9 @@ describe('RoutingService', () => {
         await callback(),
     );
     mockPrismaService.$transaction.mockImplementation(
-      async (callback: (tx: typeof mockTransactionClient) => Promise<unknown>) =>
-        await callback(mockTransactionClient),
+      async (
+        callback: (tx: typeof mockTransactionClient) => Promise<unknown>,
+      ) => await callback(mockTransactionClient),
     );
     mockRoutingProvider.geocode.mockResolvedValue({
       latitude: 55.758,
@@ -510,6 +508,41 @@ describe('RoutingService', () => {
     expect(result.status).toBe(RouteStatus.cancelled);
   });
 
+  it('soft-deletes editable route and emits route.cancelled', async () => {
+    mockPrismaService.route.findFirst.mockResolvedValue(persistedRoute);
+    mockPrismaService.route.update.mockResolvedValue({
+      ...persistedRoute,
+      status: RouteStatus.cancelled,
+    });
+
+    const result = await service.deleteRoute('company-1', 'user-1', 'route-1');
+
+    expect(mockPrismaService.route.update).toHaveBeenCalledWith({
+      where: { id: 'route-1' },
+      data: {
+        status: RouteStatus.cancelled,
+        deleted_at: expect.any(Date),
+      },
+      select: expect.any(Object),
+    });
+    expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+      DOMAIN_EVENTS.ROUTE.CANCELLED,
+      expect.objectContaining({
+        routeId: 'route-1',
+        companyId: 'company-1',
+        actorUserId: 'user-1',
+        fromStatus: RouteStatus.draft,
+        toStatus: RouteStatus.cancelled,
+        requestId: null,
+        route: expect.objectContaining({
+          id: 'route-1',
+          status: RouteStatus.cancelled,
+        }),
+      }),
+    );
+    expect(result.status).toBe(RouteStatus.cancelled);
+  });
+
   it('rejects invalid route status transition', async () => {
     mockPrismaService.route.findFirst.mockResolvedValue(persistedRoute);
 
@@ -541,9 +574,9 @@ describe('RoutingService', () => {
   it('throws when route detail is missing', async () => {
     mockPrismaService.route.findFirst.mockResolvedValue(null);
 
-    await expect(service.getRoute('company-1', 'missing-route')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      service.getRoute('company-1', 'missing-route'),
+    ).rejects.toThrow(NotFoundException);
   });
 
   it('does not fail route build when built event emission fails', async () => {

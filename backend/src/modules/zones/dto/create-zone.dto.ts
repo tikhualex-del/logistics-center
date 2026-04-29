@@ -17,7 +17,7 @@ import {
 
 export class CreateZoneDto {
   @ApiProperty({ example: 'Central District' })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString()
@@ -44,7 +44,7 @@ export class CreateZoneDto {
   declare polygon: GeoJsonPolygon;
 
   @ApiPropertyOptional({ example: '#34C759', nullable: true })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsOptional()
@@ -55,7 +55,7 @@ export class CreateZoneDto {
   declare color?: string | null;
 
   @ApiPropertyOptional({ example: 250, nullable: true })
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }) => {
     if (value === null || value === undefined || value === '') {
       return null;
     }

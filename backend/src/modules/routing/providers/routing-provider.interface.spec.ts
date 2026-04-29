@@ -32,10 +32,10 @@ class InMemoryRoutingProvider implements RoutingProvider {
       })),
       legs: orderedPoints.slice(0, -1).map((point, index) => ({
         fromPointId: point.id,
-        toPointId: orderedPoints[index + 1]!.id,
+        toPointId: orderedPoints[index + 1].id,
         distanceMeters: 625,
         durationSeconds: 270,
-        geometry: [point.coordinates, orderedPoints[index + 1]!.coordinates],
+        geometry: [point.coordinates, orderedPoints[index + 1].coordinates],
       })),
       provider: 'in-memory',
       metadata: {

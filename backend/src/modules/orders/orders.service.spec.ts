@@ -184,13 +184,15 @@ describe('OrdersService', () => {
   it('throws when order is missing', async () => {
     mockPrismaService.order.findFirst.mockResolvedValue(null);
 
-    await expect(service.getOrder('company-1', 'missing-order')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      service.getOrder('company-1', 'missing-order'),
+    ).rejects.toThrow(NotFoundException);
   });
 
   it('rejects duplicate externalId in company scope', async () => {
-    mockPrismaService.order.findFirst.mockResolvedValue({ id: 'existing-order' });
+    mockPrismaService.order.findFirst.mockResolvedValue({
+      id: 'existing-order',
+    });
 
     await expect(
       service.createOrder('company-1', 'user-1', {

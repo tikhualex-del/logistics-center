@@ -8,6 +8,7 @@ const mockRoutingService = {
   listRoutes: jest.fn(),
   getRoute: jest.fn(),
   updateRoute: jest.fn(),
+  deleteRoute: jest.fn(),
 };
 
 const routeResponse = {
@@ -113,6 +114,23 @@ describe('RoutingController', () => {
       'user-1',
       'route-1',
       dto,
+    );
+  });
+
+  it('deletes route inside tenant scope', async () => {
+    const deletedRoute = {
+      ...routeResponse,
+      status: RouteStatus.cancelled,
+    };
+    mockRoutingService.deleteRoute.mockResolvedValue(deletedRoute);
+
+    await expect(
+      controller.deleteRoute('company-1', 'user-1', 'route-1'),
+    ).resolves.toEqual(deletedRoute);
+    expect(mockRoutingService.deleteRoute).toHaveBeenCalledWith(
+      'company-1',
+      'user-1',
+      'route-1',
     );
   });
 });
