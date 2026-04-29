@@ -1,13 +1,5 @@
-import {
-  Controller,
-  Get,
-  INestApplication,
-} from '@nestjs/common';
-import {
-  APP_FILTER,
-  APP_GUARD,
-  APP_INTERCEPTOR,
-} from '@nestjs/core';
+import { Controller, Get, INestApplication } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { ThrottlerModule } from '@nestjs/throttler';

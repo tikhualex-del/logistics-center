@@ -36,9 +36,7 @@ export function createLoggerModuleParams(
   };
 }
 
-function createPinoHttpOptions(
-  options: LoggerModuleParamsOptions,
-): Options {
+function createPinoHttpOptions(options: LoggerModuleParamsOptions): Options {
   return {
     level: options.level ?? process.env['LOG_LEVEL'] ?? 'info',
     messageKey: 'message',

@@ -1,8 +1,4 @@
-import {
-  Controller,
-  Get,
-  INestApplication,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';

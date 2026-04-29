@@ -45,7 +45,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = http.getRequest<RequestWithContext>();
     const response = http.getResponse<Response>();
 
-    const requestId = this.tenantContext.getRequestId() ?? resolveRequestId(request);
+    const requestId =
+      this.tenantContext.getRequestId() ?? resolveRequestId(request);
     const errorResponse = buildErrorResponse(exception, requestId);
     const userId = request.user?.id ?? request.user?.userId;
     const companyId =
@@ -113,19 +114,20 @@ function buildErrorResponse(
   };
 }
 
-function normalizeMessage(
-  value: unknown,
-  fallback: string,
-): string | string[] {
+function normalizeMessage(value: unknown, fallback: string): string | string[] {
   if (typeof value === 'string' && value.trim()) {
     return value;
   }
 
-  if (
-    Array.isArray(value) &&
-    value.every((entry) => typeof entry === 'string' && entry.trim())
-  ) {
-    return value;
+  if (Array.isArray(value)) {
+    const messages = value.filter(
+      (entry): entry is string =>
+        typeof entry === 'string' && entry.trim().length > 0,
+    );
+
+    if (messages.length === value.length) {
+      return messages;
+    }
   }
 
   return fallback;

@@ -43,8 +43,7 @@ export class RedisHealthIndicator {
     );
 
     return {
-      host:
-        this.configService.get<string>('REDIS_HOST') ?? DEFAULT_REDIS_HOST,
+      host: this.configService.get<string>('REDIS_HOST') ?? DEFAULT_REDIS_HOST,
       port,
       password: this.configService.get<string>('REDIS_PASSWORD') ?? undefined,
       timeoutMs: DEFAULT_TIMEOUT_MS,

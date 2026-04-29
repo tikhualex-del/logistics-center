@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  INestApplication,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication, Req } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Request } from 'express';
@@ -76,6 +71,8 @@ describe('RequestIdInterceptor', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
     expect(response.body.requestId).toBe(response.headers['x-request-id']);
-    expect(response.body.requestObjectId).toBe(response.headers['x-request-id']);
+    expect(response.body.requestObjectId).toBe(
+      response.headers['x-request-id'],
+    );
   });
 });

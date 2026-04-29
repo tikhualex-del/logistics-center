@@ -24,12 +24,8 @@ describe('events.constants', () => {
   });
 
   it('keeps grouped and flat exports aligned', () => {
-    expect(DOMAIN_EVENTS.ORDER.CREATED).toBe(
-      DOMAIN_EVENT_NAMES.ORDER_CREATED,
-    );
-    expect(DOMAIN_EVENTS.ROUTE.UPDATED).toBe(
-      DOMAIN_EVENT_NAMES.ROUTE_UPDATED,
-    );
+    expect(DOMAIN_EVENTS.ORDER.CREATED).toBe(DOMAIN_EVENT_NAMES.ORDER_CREATED);
+    expect(DOMAIN_EVENTS.ROUTE.UPDATED).toBe(DOMAIN_EVENT_NAMES.ROUTE_UPDATED);
     expect(DOMAIN_EVENTS.PAYMENT.CALCULATED).toBe(
       DOMAIN_EVENT_NAMES.PAYMENT_CALCULATED,
     );

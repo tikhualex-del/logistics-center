@@ -23,6 +23,10 @@ type RequestWithContext = RequestWithId & {
   user?: RequestUser;
 };
 
+interface ResponseWithHeader {
+  setHeader(name: string, value: string): void;
+}
+
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
   constructor(
@@ -50,8 +54,9 @@ export class AppThrottlerGuard extends ThrottlerGuard {
     if (request.user?.companyId) {
       this.tenantContext.setCompanyId(request.user.companyId);
     }
-    if (typeof res?.setHeader === 'function') {
-      res.setHeader(REQUEST_ID_HEADER, requestId);
+    const response = res as ResponseWithHeader | undefined;
+    if (typeof response?.setHeader === 'function') {
+      response.setHeader(REQUEST_ID_HEADER, requestId);
     }
 
     return await super.canActivate(context);

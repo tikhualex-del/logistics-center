@@ -1,14 +1,5 @@
-import {
-  Body,
-  Controller,
-  INestApplication,
-  Post,
-} from '@nestjs/common';
-import {
-  APP_FILTER,
-  APP_INTERCEPTOR,
-  APP_PIPE,
-} from '@nestjs/core';
+import { Body, Controller, INestApplication, Post } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { IsInt, IsString, Min } from 'class-validator';
 import { PinoLogger } from 'nestjs-pino';

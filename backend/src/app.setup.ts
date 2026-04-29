@@ -61,10 +61,7 @@ export function createSwaggerConfig() {
 }
 
 function setupSwagger(app: INestApplication): void {
-  const document = SwaggerModule.createDocument(
-    app,
-    createSwaggerConfig(),
-  );
+  const document = SwaggerModule.createDocument(app, createSwaggerConfig());
   const options: SwaggerCustomOptions = {
     customSiteTitle: 'Logistics Center API Docs',
     swaggerOptions: {

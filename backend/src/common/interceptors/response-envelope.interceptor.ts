@@ -9,26 +9,13 @@ import { map } from 'rxjs';
 import { TenantContextService } from '../../prisma/tenant-context.service';
 import { resolveRequestId, type RequestWithId } from '../http/request-id';
 
-interface ResponseEnvelopeMeta {
-  requestId: string;
-  timestamp: string;
-}
-
-interface ResponseEnvelope<T> {
-  data: T;
-  meta: ResponseEnvelopeMeta;
-}
-
 @Injectable()
 export class ResponseEnvelopeInterceptor implements NestInterceptor {
   constructor(private readonly tenantContext: TenantContextService) {}
 
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<ResponseEnvelope<unknown>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
-      return next.handle();
+      return next.handle() as Observable<unknown>;
     }
 
     const request = context.switchToHttp().getRequest<RequestWithId>();

@@ -26,10 +26,7 @@ type RequestWithContext = RequestWithId & {
 export class RequestIdInterceptor implements NestInterceptor {
   constructor(private readonly tenantContext: TenantContextService) {}
 
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<unknown> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
       return next.handle();
     }

@@ -1,8 +1,4 @@
-import {
-  Controller,
-  Get,
-  INestApplication,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { NextFunction, Response } from 'express';
@@ -37,9 +33,7 @@ class MemoryLogStream extends Writable {
 
 @Controller('structured-logging-test')
 class StructuredLoggingTestController {
-  constructor(
-    private readonly logger: PinoLogger,
-  ) {
+  constructor(private readonly logger: PinoLogger) {
     this.logger.setContext(StructuredLoggingTestController.name);
   }
 
@@ -80,17 +74,21 @@ describe('Pino logger configuration', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.use(moduleFixture.get(TenantContextMiddleware).use.bind(
-      moduleFixture.get(TenantContextMiddleware),
-    ));
-    app.use((
-      req: { user?: { companyId?: string } },
-      _res: Response,
-      next: NextFunction,
-    ) => {
-      req.user = { companyId: 'company-1' };
-      next();
-    });
+    app.use(
+      moduleFixture
+        .get(TenantContextMiddleware)
+        .use.bind(moduleFixture.get(TenantContextMiddleware)),
+    );
+    app.use(
+      (
+        req: { user?: { companyId?: string } },
+        _res: Response,
+        next: NextFunction,
+      ) => {
+        req.user = { companyId: 'company-1' };
+        next();
+      },
+    );
     await app.init();
   });
 

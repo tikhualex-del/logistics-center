@@ -16,6 +16,8 @@ const PRISMA_SERVICE_PROPS = new Set<PropertyKey>([
   'tenantContext',
 ]);
 
+type BoundPrismaMethod = (...args: unknown[]) => unknown;
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -50,22 +52,22 @@ export class PrismaService
       },
     });
 
+    const extendedTarget = extendedClient as Record<PropertyKey, unknown>;
+
     return new Proxy(this, {
       get: (target, property, receiver) => {
         if (PRISMA_SERVICE_PROPS.has(property)) {
           return Reflect.get(target, property, receiver);
         }
 
-        const extendedValue = Reflect.get(
-          extendedClient as object,
-          property,
-          receiver,
-        );
+        const extendedValue = extendedTarget[property];
 
         if (extendedValue !== undefined) {
-          return typeof extendedValue === 'function'
-            ? extendedValue.bind(extendedClient)
-            : extendedValue;
+          if (typeof extendedValue === 'function') {
+            return (extendedValue as BoundPrismaMethod).bind(extendedClient);
+          }
+
+          return extendedValue;
         }
 
         return Reflect.get(target, property, receiver);
