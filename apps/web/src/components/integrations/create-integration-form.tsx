@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useCreateIntegration } from '@/features/integrations/hooks'
+import type { IntegrationType } from '@/features/integrations/types'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,7 @@ import { ROUTES } from '@/constants/routes'
 const TYPE_OPTIONS = [
   { value: 'webhook', label: 'Webhook' },
   { value: 'api', label: 'API' },
-]
+] satisfies Array<{ value: IntegrationType; label: string }>
 
 export function CreateIntegrationForm() {
   const router = useRouter()
@@ -22,8 +23,8 @@ export function CreateIntegrationForm() {
     createIntegration(
       {
         name: data.get('name') as string,
-        type: data.get('type') as string,
-        endpoint: data.get('endpoint') as string || undefined,
+        type: normalizeIntegrationType(data.get('type')),
+        endpoint: (data.get('endpoint') as string) || undefined,
       },
       { onSuccess: (integration) => router.push(ROUTES.INTEGRATION(integration.id)) },
     )
@@ -41,4 +42,8 @@ export function CreateIntegrationForm() {
       </div>
     </form>
   )
+}
+
+function normalizeIntegrationType(value: FormDataEntryValue | null): IntegrationType {
+  return value === 'api' ? 'api' : 'webhook'
 }

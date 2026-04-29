@@ -22,10 +22,10 @@ export function CourierProgressPanel() {
     <div className="space-y-3">
       {activeCouriers.map((courier) => {
         const courierOrders = (orders ?? []).filter(
-          (o) => o.courier?.id === courier.id && ['assigned', 'picked_up'].includes(o.status),
+          (o) => o.courierId === courier.id && ['assigned', 'picked_up'].includes(o.status),
         )
         const delivered = (orders ?? []).filter(
-          (o) => o.courier?.id === courier.id && o.status === 'delivered',
+          (o) => o.courierId === courier.id && o.status === 'delivered',
         ).length
 
         return (

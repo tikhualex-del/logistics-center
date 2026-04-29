@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { clsx } from 'clsx'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { SlaStatusBadge } from '@/components/sla/sla-status-badge'
@@ -16,7 +16,8 @@ interface Props {
   filters: MapOrderFilters
   onFilterChange: (patch: Partial<MapOrderFilters>) => void
   selectedOrderId: string | null
-  onSelectOrder: (id: string) => void
+  selectedOrderIds: string[]
+  onSelectOrder: (id: string, multiSelect?: boolean) => void
 }
 
 export function MapOrdersPanel({
@@ -25,11 +26,20 @@ export function MapOrdersPanel({
   filters,
   onFilterChange,
   selectedOrderId,
+  selectedOrderIds,
   onSelectOrder,
 }: Props) {
   const [expanded, setExpanded] = useState(true)
 
   const hasActiveFilters = filters.status || filters.slaStatus || filters.search || filters.date
+  const selectedOrderIdSet = useMemo(
+    () => new Set(selectedOrderIds),
+    [selectedOrderIds],
+  )
+  const orderedOrders = useMemo(
+    () => prioritizeSelectedOrders(orders, selectedOrderIds),
+    [orders, selectedOrderIds],
+  )
 
   return (
     <div
@@ -78,12 +88,17 @@ export function MapOrdersPanel({
               </div>
             ) : (
               <ul className="divide-y divide-gray-800">
-                {orders.map((order) => (
+                {orderedOrders.map((order) => (
                   <OrderCard
                     key={order.id}
                     order={order}
-                    selected={order.id === selectedOrderId}
-                    onClick={() => onSelectOrder(order.id)}
+                    selected={
+                      order.id === selectedOrderId ||
+                      selectedOrderIdSet.has(order.id)
+                    }
+                    onClick={(multiSelect) =>
+                      onSelectOrder(order.id, multiSelect)
+                    }
                   />
                 ))}
               </ul>
@@ -97,16 +112,53 @@ export function MapOrdersPanel({
 
 // ─── Single order card ────────────────────────────────────────────────────────
 
+function prioritizeSelectedOrders<T extends { id: string }>(
+  orders: T[],
+  selectedOrderIds: string[],
+): T[] {
+  if (selectedOrderIds.length === 0) return orders
+
+  const selectedOrderIndex = new Map(
+    selectedOrderIds.map((orderId, index) => [orderId, index]),
+  )
+
+  return [...orders].sort((a, b) => {
+    const aIndex = selectedOrderIndex.get(a.id)
+    const bIndex = selectedOrderIndex.get(b.id)
+
+    if (aIndex === undefined && bIndex === undefined) return 0
+    if (aIndex === undefined) return 1
+    if (bIndex === undefined) return -1
+
+    return aIndex - bIndex
+  })
+}
+
 interface OrderCardProps {
   order: Order
   selected: boolean
-  onClick: () => void
+  onClick: (multiSelect?: boolean) => void
 }
 
 function OrderCard({ order, selected, onClick }: OrderCardProps) {
+  function handleClick(event: React.MouseEvent<HTMLLIElement>): void {
+    onClick(isMultiSelectEvent(event))
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLLIElement>): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onClick(isMultiSelectEvent(event))
+    }
+  }
+
   return (
     <li
-      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       className={clsx(
         'cursor-pointer px-3 py-3 transition-colors',
         selected
@@ -132,4 +184,10 @@ function OrderCard({ order, selected, onClick }: OrderCardProps) {
       </div>
     </li>
   )
+}
+
+function isMultiSelectEvent(
+  event: React.KeyboardEvent | React.MouseEvent,
+): boolean {
+  return event.ctrlKey || event.metaKey
 }

@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { useUpdateUserRole } from '@/features/users/hooks'
+import type { UserRole } from '@/features/users/types'
 import { Modal } from '@/components/ui/modal'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 
 interface Props {
   userId: string
-  currentRole: string
+  currentRole: UserRole
   open: boolean
   onClose: () => void
 }
@@ -17,7 +18,7 @@ const ROLE_OPTIONS = [
   { value: 'owner', label: 'Owner' },
   { value: 'dispatcher', label: 'Dispatcher' },
   { value: 'viewer', label: 'Viewer' },
-]
+] satisfies Array<{ value: UserRole; label: string }>
 
 export function ChangeRoleModal({ userId, currentRole, open, onClose }: Props) {
   const [role, setRole] = useState(currentRole)
@@ -34,7 +35,7 @@ export function ChangeRoleModal({ userId, currentRole, open, onClose }: Props) {
         <Select
           options={ROLE_OPTIONS}
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) => setRole(normalizeUserRole(e.target.value))}
           label="Role"
         />
         <div className="flex justify-end gap-2">
@@ -44,4 +45,12 @@ export function ChangeRoleModal({ userId, currentRole, open, onClose }: Props) {
       </form>
     </Modal>
   )
+}
+
+function normalizeUserRole(value: string): UserRole {
+  if (value === 'owner' || value === 'dispatcher' || value === 'viewer') {
+    return value
+  }
+
+  return 'viewer'
 }

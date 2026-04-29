@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useInviteUser } from '@/features/users/hooks'
+import type { UserRole } from '@/features/users/types'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,7 @@ const ROLE_OPTIONS = [
   { value: 'dispatcher', label: 'Dispatcher' },
   { value: 'viewer', label: 'Viewer' },
   { value: 'owner', label: 'Owner' },
-]
+] satisfies Array<{ value: UserRole; label: string }>
 
 export function InviteUserForm() {
   const router = useRouter()
@@ -24,7 +25,7 @@ export function InviteUserForm() {
       {
         name: data.get('name') as string,
         email: data.get('email') as string,
-        role: data.get('role') as string,
+        role: normalizeUserRole(data.get('role')),
         password: data.get('password') as string,
       },
       { onSuccess: () => router.push(ROUTES.USERS) },
@@ -44,4 +45,12 @@ export function InviteUserForm() {
       </div>
     </form>
   )
+}
+
+function normalizeUserRole(value: FormDataEntryValue | null): UserRole {
+  if (value === 'owner' || value === 'dispatcher' || value === 'viewer') {
+    return value
+  }
+
+  return 'viewer'
 }

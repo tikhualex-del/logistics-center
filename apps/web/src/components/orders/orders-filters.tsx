@@ -4,10 +4,10 @@ import { Select } from '@/components/ui/select'
 import { ORDER_STATUS_LABELS } from '@/constants/order-statuses'
 
 interface Props {
-  status: string
-  onStatusChange: (v: string) => void
-  slaStatus: string
-  onSlaStatusChange: (v: string) => void
+  status?: string
+  onStatusChange?: (v: string) => void
+  slaStatus?: string
+  onSlaStatusChange?: (v: string) => void
 }
 
 const STATUS_OPTIONS = [
@@ -26,19 +26,24 @@ const SLA_OPTIONS = [
   { value: 'exempt', label: 'Exempt' },
 ]
 
-export function OrdersFilters({ status, onStatusChange, slaStatus, onSlaStatusChange }: Props) {
+export function OrdersFilters({
+  status = '',
+  onStatusChange,
+  slaStatus = '',
+  onSlaStatusChange,
+}: Props) {
   return (
     <div className="flex gap-3">
       <Select
         options={STATUS_OPTIONS}
         value={status}
-        onChange={(e) => onStatusChange(e.target.value)}
+        onChange={(e) => onStatusChange?.(e.target.value)}
         aria-label="Filter by status"
       />
       <Select
         options={SLA_OPTIONS}
         value={slaStatus}
-        onChange={(e) => onSlaStatusChange(e.target.value)}
+        onChange={(e) => onSlaStatusChange?.(e.target.value)}
         aria-label="Filter by SLA"
       />
     </div>
