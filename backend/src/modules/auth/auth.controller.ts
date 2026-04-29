@@ -19,10 +19,7 @@ import {
 import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import type {
-  AuthenticatedUser,
-  RequestWithUser,
-} from './auth-request.types';
+import type { AuthenticatedUser, RequestWithUser } from './auth-request.types';
 import { AuthService, type RefreshJwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -108,8 +105,10 @@ export class AuthController {
   ): Promise<{ accessToken: string }> {
     const { sub: userId, companyId } = req.user;
 
-    const { accessToken, refreshToken } =
-      await this.authService.refreshTokens(userId, companyId);
+    const { accessToken, refreshToken } = await this.authService.refreshTokens(
+      userId,
+      companyId,
+    );
 
     // Ротация: устанавливаем новый refresh token
     res.cookie(

@@ -139,7 +139,10 @@ describe('UsersService', () => {
     const createCall = prismaTx.user.create.mock.calls[0]?.[0];
     expect(createCall?.data.password_hash).toEqual(expect.any(String));
     await expect(
-      bcrypt.compare('SecurePass123!', createCall?.data.password_hash as string),
+      bcrypt.compare(
+        'SecurePass123!',
+        createCall?.data.password_hash as string,
+      ),
     ).resolves.toBe(true);
     expect(prismaTx.courier.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

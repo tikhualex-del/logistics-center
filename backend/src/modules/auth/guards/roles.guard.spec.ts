@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Req,
-  type INestApplication,
-} from '@nestjs/common';
+import { Controller, Get, Req, type INestApplication } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -13,10 +8,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import type {
-  AuthenticatedUser,
-  RequestWithUser,
-} from '../auth-request.types';
+import type { AuthenticatedUser, RequestWithUser } from '../auth-request.types';
 import { AuthService } from '../auth.service';
 import { JwtStrategy } from '../strategies/jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';

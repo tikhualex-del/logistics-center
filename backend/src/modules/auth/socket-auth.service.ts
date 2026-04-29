@@ -45,7 +45,10 @@ export class SocketAuthService {
 }
 
 function extractAccessToken(client: Socket): string | null {
-  const authToken = client.handshake.auth?.['token'];
+  const handshakeAuth = client.handshake.auth as
+    | Record<string, unknown>
+    | undefined;
+  const authToken = handshakeAuth?.['token'];
   if (typeof authToken === 'string') {
     return normalizeAccessToken(authToken);
   }

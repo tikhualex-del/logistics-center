@@ -41,7 +41,9 @@ describe('FeatureFlagsService', () => {
   });
 
   it('returns true when feature flag is enabled', async () => {
-    mockPrismaService.companyFeature.findFirst.mockResolvedValue({ id: 'flag-1' });
+    mockPrismaService.companyFeature.findFirst.mockResolvedValue({
+      id: 'flag-1',
+    });
 
     await expect(
       service.isEnabled('ai.dispatch-suggestions', 'company-1'),

@@ -45,9 +45,9 @@ describe('AuditController', () => {
     ];
     mockAuditService.listAuditLogs.mockResolvedValue(serviceResult);
 
-    await expect(
-      controller.listAuditLogs('company-1', query),
-    ).resolves.toEqual(serviceResult);
+    await expect(controller.listAuditLogs('company-1', query)).resolves.toEqual(
+      serviceResult,
+    );
     expect(mockAuditService.listAuditLogs).toHaveBeenCalledWith(
       'company-1',
       query,

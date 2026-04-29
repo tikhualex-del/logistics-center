@@ -12,9 +12,9 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          const token = (request?.cookies as Record<string, string> | undefined)?.[
-            'refreshToken'
-          ];
+          const token = (
+            request?.cookies as Record<string, string> | undefined
+          )?.['refreshToken'];
           if (!token) {
             throw new UnauthorizedException('Refresh token not provided');
           }

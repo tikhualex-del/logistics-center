@@ -98,7 +98,9 @@ export class CompaniesService {
     });
   }
 
-  async listFeatureFlags(companyId: string): Promise<CompanyFeatureResponseDto[]> {
+  async listFeatureFlags(
+    companyId: string,
+  ): Promise<CompanyFeatureResponseDto[]> {
     await this.ensureCompanyExists(companyId);
 
     return await this.prisma.runWithTenant(companyId, async () => {

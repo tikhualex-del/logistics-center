@@ -13,10 +13,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Public } from '../../../common/decorators/public.decorator';
-import type {
-  AuthenticatedUser,
-  RequestWithUser,
-} from '../auth-request.types';
+import type { AuthenticatedUser, RequestWithUser } from '../auth-request.types';
 import { AuthService } from '../auth.service';
 import { JwtStrategy } from '../strategies/jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';

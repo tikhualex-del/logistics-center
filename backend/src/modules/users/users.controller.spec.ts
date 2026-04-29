@@ -75,9 +75,9 @@ describe('UsersController', () => {
     ];
     mockUsersService.listUsers.mockResolvedValue(serviceResult);
 
-    await expect(controller.listUsers(authenticatedUser.companyId)).resolves.toEqual(
-      serviceResult,
-    );
+    await expect(
+      controller.listUsers(authenticatedUser.companyId),
+    ).resolves.toEqual(serviceResult);
     expect(mockUsersService.listUsers).toHaveBeenCalledWith(
       authenticatedUser.companyId,
     );

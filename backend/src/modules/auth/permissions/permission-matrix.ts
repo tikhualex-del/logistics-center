@@ -32,14 +32,18 @@ const COURIER_PERMISSIONS = [
   'view:own-earnings',
 ] as const satisfies readonly PermissionName[];
 
-export const ROLE_PERMISSION_MATRIX: Record<UserRole, readonly PermissionName[]> =
-  {
-    [UserRole.admin]: ADMIN_PERMISSIONS,
-    [UserRole.dispatcher]: DISPATCHER_PERMISSIONS,
-    [UserRole.courier]: COURIER_PERMISSIONS,
-  };
+export const ROLE_PERMISSION_MATRIX: Record<
+  UserRole,
+  readonly PermissionName[]
+> = {
+  [UserRole.admin]: ADMIN_PERMISSIONS,
+  [UserRole.dispatcher]: DISPATCHER_PERMISSIONS,
+  [UserRole.courier]: COURIER_PERMISSIONS,
+};
 
-export function getPermissionsForRole(role: UserRole): readonly PermissionName[] {
+export function getPermissionsForRole(
+  role: UserRole,
+): readonly PermissionName[] {
   return ROLE_PERMISSION_MATRIX[role] ?? [];
 }
 

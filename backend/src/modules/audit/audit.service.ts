@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import {
-  AuditActorRole,
-  Prisma,
-  UserRole,
-} from '@prisma/client';
+import { AuditActorRole, Prisma, UserRole } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CourierLocationUpdatedEvent } from '../couriers/couriers.events';
 import type {
@@ -386,7 +383,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -403,5 +402,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

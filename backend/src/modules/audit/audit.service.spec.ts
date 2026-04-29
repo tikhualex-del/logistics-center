@@ -105,7 +105,9 @@ describe('AuditService', () => {
   });
 
   it('appends audit log for order.created and resolves actor role from user role', async () => {
-    mockPrismaService.user.findFirst.mockResolvedValue({ role: UserRole.admin });
+    mockPrismaService.user.findFirst.mockResolvedValue({
+      role: UserRole.admin,
+    });
     mockPrismaService.auditLog.create.mockResolvedValue({});
 
     await service.handleOrderCreated({
@@ -258,7 +260,9 @@ describe('AuditService', () => {
   });
 
   it('appends payment.approved audit entry with payment snapshots', async () => {
-    mockPrismaService.user.findFirst.mockResolvedValue({ role: UserRole.admin });
+    mockPrismaService.user.findFirst.mockResolvedValue({
+      role: UserRole.admin,
+    });
     mockPrismaService.auditLog.create.mockResolvedValue({});
 
     await service.handlePaymentApproved({
