@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/hooks'
@@ -6,10 +7,6 @@ import { ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { Permission } from '@/hooks'
 
-/**
- * A single navigation item definition.
- * `requiredPermissions`: user must have AT LEAST ONE of these to see the item.
- */
 interface NavItem {
   labelKey: string
   href: string
@@ -17,7 +14,6 @@ interface NavItem {
   icon: React.ReactNode
 }
 
-/** Map icon (SVG) */
 function IconMap(): React.ReactElement {
   return (
     <svg
@@ -39,7 +35,6 @@ function IconMap(): React.ReactElement {
   )
 }
 
-/** Users / couriers icon */
 function IconUsers(): React.ReactElement {
   return (
     <svg
@@ -62,7 +57,6 @@ function IconUsers(): React.ReactElement {
   )
 }
 
-/** Wallet / payments icon */
 function IconWallet(): React.ReactElement {
   return (
     <svg
@@ -84,7 +78,6 @@ function IconWallet(): React.ReactElement {
   )
 }
 
-/** Settings / gear icon */
 function IconSettings(): React.ReactElement {
   return (
     <svg
@@ -105,8 +98,7 @@ function IconSettings(): React.ReactElement {
   )
 }
 
-/** Collapse/expand chevron icon */
-function IconChevron({ collapsed }: { collapsed: boolean }): React.ReactElement {
+function IconClose(): React.ReactElement {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -119,18 +111,13 @@ function IconChevron({ collapsed }: { collapsed: boolean }): React.ReactElement 
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={cn('transition-transform duration-200', collapsed ? 'rotate-180' : '')}
     >
-      <polyline points="15 18 9 12 15 6" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   )
 }
 
-/**
- * Nav items definition.
- * Per CLAUDE.md §22: items not accessible to the current role are NOT rendered.
- * `requiredPermissions`: user needs at least one of these to see the item.
- */
 const NAV_ITEMS: NavItem[] = [
   {
     labelKey: 'nav.map',
@@ -158,91 +145,119 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-/**
- * Sidebar navigation component.
- *
- * Role-based visibility: nav items are conditionally rendered — NOT hidden via CSS.
- * Per CLAUDE.md §8 and §22: "render them conditionally based on permissions"
- *
- * Collapse state is managed via useUiStore (Zustand UI state — correct per §8).
- */
 export function Sidebar(): React.ReactElement {
   const { t } = useTranslation()
   const { can } = usePermissions()
-  const { sidebarCollapsed, toggleSidebar } = useUiStore()
+  const { sidebarOpen, closeSidebar } = useUiStore()
+  const navRef = useRef<HTMLElement | null>(null)
 
-  // Filter nav items to only those the current user has permission to see.
-  // At least one of requiredPermissions must be granted.
+  const handleCloseSidebar = useCallback((): void => {
+    const activeElement = document.activeElement
+
+    if (
+      activeElement instanceof HTMLElement &&
+      navRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur()
+    }
+
+    closeSidebar()
+  }, [closeSidebar])
+
+  useEffect(() => {
+    if (!sidebarOpen) return
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        handleCloseSidebar()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleCloseSidebar, sidebarOpen])
+
   const visibleItems = NAV_ITEMS.filter((item) =>
     item.requiredPermissions.some((permission) => can(permission)),
   )
 
   return (
-    <nav
-      className={cn(
-        'flex flex-col h-full bg-card border-r border-border transition-all duration-200 shrink-0',
-        sidebarCollapsed ? 'w-14' : 'w-52',
-      )}
-      aria-label={t('nav.main')}
-    >
-      {/* Brand / logo area */}
+    <>
       <div
         className={cn(
-          'flex items-center h-14 border-b border-border px-3 shrink-0',
-          sidebarCollapsed ? 'justify-center' : 'gap-2',
+          'fixed inset-0 z-40 bg-black/35 transition-opacity duration-200',
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
+        onClick={handleCloseSidebar}
+        aria-hidden="true"
+      />
+
+      <nav
+        ref={navRef}
+        className={cn(
+          'fixed bottom-[22rem] left-1.5 top-[4.5rem] z-50 flex w-64 flex-col overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border transition-transform duration-200 ease-out',
+          sidebarOpen
+            ? 'translate-x-0'
+            : '-translate-x-[calc(100%+0.375rem)] pointer-events-none',
+        )}
+        aria-label={t('nav.main')}
+        aria-hidden={!sidebarOpen}
       >
-        {/* Compact brand mark */}
-        <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
-          <span className="text-primary-foreground text-xs font-bold">LC</span>
+        <div className="flex h-14 items-center gap-2 border-b border-border px-3 shrink-0">
+          <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
+            <span className="text-primary-foreground text-xs font-bold">LC</span>
+          </div>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+            {t('nav.brand')}
+          </span>
+          <button
+            type="button"
+            onClick={handleCloseSidebar}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            aria-label={t('common.close')}
+            title={t('common.close')}
+          >
+            <IconClose />
+          </button>
         </div>
-        {!sidebarCollapsed && (
-          <span className="text-sm font-semibold truncate">{t('nav.brand')}</span>
-        )}
-      </div>
 
-      {/* Navigation items — only visible items are rendered */}
-      <ul className="flex-1 py-2 space-y-1 px-2 overflow-y-auto" role="list">
-        {visibleItems.map((item) => (
-          <li key={item.href}>
-            <NavLink
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors',
-                  'hover:bg-accent hover:text-accent-foreground',
-                  isActive
-                    ? 'bg-accent text-accent-foreground font-medium'
-                    : 'text-muted-foreground',
-                  sidebarCollapsed && 'justify-center',
-                )
-              }
-              title={sidebarCollapsed ? t(item.labelKey) : undefined}
-            >
-              <span className="shrink-0">{item.icon}</span>
-              {!sidebarCollapsed && (
+        <ul className="flex-1 py-2 space-y-1 px-2 overflow-y-auto" role="list">
+          {visibleItems.map((item) => (
+            <li key={item.href}>
+              <NavLink
+                to={item.href}
+                onClick={handleCloseSidebar}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isActive
+                      ? 'bg-accent text-accent-foreground font-medium'
+                      : 'text-muted-foreground',
+                  )
+                }
+              >
+                <span className="shrink-0">{item.icon}</span>
                 <span className="truncate">{t(item.labelKey)}</span>
-              )}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
 
-      {/* Collapse toggle */}
-      <div className="p-2 border-t border-border shrink-0">
-        <button
-          onClick={toggleSidebar}
-          className={cn(
-            'flex items-center gap-2 w-full px-2 py-2 rounded-md text-xs text-muted-foreground',
-            'hover:bg-accent hover:text-accent-foreground transition-colors',
-            sidebarCollapsed && 'justify-center',
-          )}
-          aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-        >
-          <IconChevron collapsed={sidebarCollapsed} />
-          {!sidebarCollapsed && <span>{t('nav.collapseShort')}</span>}
-        </button>
-      </div>
-    </nav>
+        <div className="p-2 border-t border-border shrink-0">
+          <button
+            type="button"
+            onClick={handleCloseSidebar}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <IconClose />
+            <span>{t('common.close')}</span>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }

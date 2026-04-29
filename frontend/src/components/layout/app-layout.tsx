@@ -1,6 +1,8 @@
+import { useLocation } from 'react-router-dom'
 import { AlertToastViewport } from './alert-toast-viewport'
 import { Sidebar } from './sidebar'
 import { TopBar } from './top-bar'
+import { ROUTES } from '@/lib/constants'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -25,6 +27,26 @@ interface AppLayoutProps {
  * The sidebar + top bar together use minimal chrome to maximise content area.
  */
 export function AppLayout({ children }: AppLayoutProps): React.ReactElement {
+  const location = useLocation()
+  const isDispatcher = location.pathname === ROUTES.DISPATCHER
+
+  if (isDispatcher) {
+    return (
+      <div className="flex h-screen w-screen overflow-hidden bg-background">
+        <Sidebar />
+        <div className="relative flex-1 overflow-hidden">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-40">
+            <TopBar />
+          </div>
+          <div className="absolute inset-0 overflow-hidden">
+            {children}
+          </div>
+        </div>
+        <AlertToastViewport />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
       <Sidebar />

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent, ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Building2,
   CheckCircle2,
@@ -23,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import i18n from '@/i18n'
 import {
   useCompanyFeatures,
   useCreateWebhook,
@@ -73,6 +75,7 @@ const DEFAULT_WEBHOOK_FORM: WebhookFormState = {
 }
 
 export function CompanySettings(): ReactElement {
+  const { t } = useTranslation()
   const companyQuery = useCurrentCompany()
   const featuresQuery = useCompanyFeatures()
   const webhooksQuery = useWebhooks()
@@ -198,7 +201,7 @@ export function CompanySettings(): ReactElement {
 
     const payload = webhookFormToPayload(webhookForm)
     if (!payload) {
-      setWebhookError('Settings must be a valid JSON object.')
+      setWebhookError(t('settings.integrations.invalidJson'))
       return
     }
 
@@ -221,10 +224,10 @@ export function CompanySettings(): ReactElement {
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Company profile
+                    {t('settings.company.title')}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-foreground">
-                    {company?.name ?? 'Current company'}
+                    {company?.name ?? t('settings.company.current')}
                   </h2>
                 </div>
                 <Button
@@ -235,25 +238,27 @@ export function CompanySettings(): ReactElement {
                   disabled={company === null}
                 >
                   <Edit3 />
-                  Edit name
+                  {t('settings.company.editName')}
                 </Button>
               </div>
             </div>
 
             <form onSubmit={updateCompanyName} className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <div>
-                <Label htmlFor="company-name">Company name</Label>
+                <Label htmlFor="company-name">{t('settings.company.name')}</Label>
                 <Input
                   id="company-name"
                   value={companyName}
                   onChange={(event) => setCompanyName(event.target.value)}
-                  placeholder={company?.name ?? 'Company name'}
+                  placeholder={company?.name ?? t('settings.company.name')}
                   disabled={!canEditCompany}
                   className="mt-2"
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Created {company ? formatDate(company.createdAt) : 'unknown'} ·
-                  updated {company ? formatDate(company.updatedAt) : 'unknown'}
+                  {t('settings.company.createdUpdated', {
+                    created: company ? formatDate(company.createdAt) : t('common.unknown'),
+                    updated: company ? formatDate(company.updatedAt) : t('common.unknown'),
+                  })}
                 </p>
               </div>
               <Button
@@ -261,7 +266,7 @@ export function CompanySettings(): ReactElement {
                 disabled={!canEditCompany || updateCompanyMutation.isPending}
               >
                 <Save />
-                Save profile
+                {t('settings.company.save')}
               </Button>
             </form>
           </section>
@@ -270,17 +275,17 @@ export function CompanySettings(): ReactElement {
             <div className="flex items-start justify-between gap-3 border-b border-border p-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Feature flags
+                  {t('settings.featureFlags.title')}
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-foreground">
-                  Runtime capabilities
+                  {t('settings.featureFlags.subtitle')}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => void featuresQuery.refetch()}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent"
-                aria-label="Refresh feature flags"
+                aria-label={t('settings.featureFlags.refresh')}
               >
                 <RefreshCw
                   className={cn(
@@ -304,8 +309,14 @@ export function CompanySettings(): ReactElement {
                           </h3>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {feature.enabled ? 'Enabled' : 'Disabled'} · updated{' '}
-                          {formatDate(feature.updatedAt)}
+                          {feature.enabled
+                            ? t('common.enabled')
+                            : t('common.disabled')}{' '}
+                          ·{' '}
+                          {t('settings.company.createdUpdated', {
+                            created: formatDate(feature.updatedAt),
+                            updated: formatDate(feature.updatedAt),
+                          })}
                         </p>
                       </div>
                       <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
@@ -320,7 +331,7 @@ export function CompanySettings(): ReactElement {
                           disabled={!canEditCompany}
                           className="h-4 w-4 accent-primary"
                         />
-                        Enabled
+                        {t('common.enabled')}
                       </label>
                     </div>
                     <textarea
@@ -342,7 +353,7 @@ export function CompanySettings(): ReactElement {
                         onClick={() => saveFeature(feature)}
                       >
                         <Save />
-                        Save flag
+                        {t('settings.featureFlags.save')}
                       </Button>
                     </div>
                   </div>
@@ -357,15 +368,15 @@ export function CompanySettings(): ReactElement {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Integrations
+                  {t('settings.integrations.title')}
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-foreground">
-                  Webhook endpoints
+                  {t('settings.integrations.subtitle')}
                 </h2>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={resetWebhookForm}>
                 <Plus />
-                New
+                {t('settings.integrations.new')}
               </Button>
             </div>
           </div>
@@ -373,11 +384,15 @@ export function CompanySettings(): ReactElement {
           <form onSubmit={submitWebhook} className="space-y-4 p-5">
             {!canConnectIntegrations && (
               <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-700">
-                Your current role cannot manage integrations.
+                {t('settings.integrations.cannotManage')}
               </p>
             )}
 
-            <FormField label="Name" htmlFor="webhook-name" icon={<Webhook />}>
+            <FormField
+              label={t('settings.integrations.name')}
+              htmlFor="webhook-name"
+              icon={<Webhook />}
+            >
               <Input
                 id="webhook-name"
                 value={webhookForm.name}
@@ -387,7 +402,11 @@ export function CompanySettings(): ReactElement {
               />
             </FormField>
 
-            <FormField label="Provider" htmlFor="webhook-provider" icon={<Building2 />}>
+            <FormField
+              label={t('settings.integrations.provider')}
+              htmlFor="webhook-provider"
+              icon={<Building2 />}
+            >
               <Input
                 id="webhook-provider"
                 value={webhookForm.provider}
@@ -399,7 +418,11 @@ export function CompanySettings(): ReactElement {
               />
             </FormField>
 
-            <FormField label="Outbound URL" htmlFor="webhook-url" icon={<Globe2 />}>
+            <FormField
+              label={t('settings.integrations.outboundUrl')}
+              htmlFor="webhook-url"
+              icon={<Globe2 />}
+            >
               <Input
                 id="webhook-url"
                 type="url"
@@ -413,7 +436,11 @@ export function CompanySettings(): ReactElement {
             </FormField>
 
             <FormField
-              label={isWebhookEditing ? 'Rotate webhook secret' : 'Webhook secret'}
+              label={
+                isWebhookEditing
+                  ? t('settings.integrations.rotateSecret')
+                  : t('settings.integrations.secret')
+              }
               htmlFor="webhook-secret"
               icon={<KeyRound />}
             >
@@ -427,11 +454,17 @@ export function CompanySettings(): ReactElement {
                 }
                 disabled={!canConnectIntegrations}
                 required={!isWebhookEditing}
-                placeholder={isWebhookEditing ? 'Leave empty to keep current secret' : ''}
+                placeholder={
+                  isWebhookEditing ? t('settings.integrations.keepSecret') : ''
+                }
               />
             </FormField>
 
-            <FormField label="Inbound secret" htmlFor="inbound-secret" icon={<KeyRound />}>
+            <FormField
+              label={t('settings.integrations.inboundSecret')}
+              htmlFor="inbound-secret"
+              icon={<KeyRound />}
+            >
               <Input
                 id="inbound-secret"
                 type="password"
@@ -441,14 +474,14 @@ export function CompanySettings(): ReactElement {
                   updateWebhookForm('inboundSecret', event.target.value)
                 }
                 disabled={!canConnectIntegrations}
-                placeholder="Optional"
+                placeholder={t('common.optional')}
               />
             </FormField>
 
             <div>
               <Label className="flex items-center gap-2">
                 <Link2 className="h-4 w-4 text-muted-foreground" />
-                Events
+                {t('settings.integrations.events')}
               </Label>
               <div className="mt-2 grid gap-2">
                 {SUPPORTED_WEBHOOK_EVENTS.map((eventType) => (
@@ -470,7 +503,9 @@ export function CompanySettings(): ReactElement {
             </div>
 
             <label className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
-              <span className="text-sm font-medium text-foreground">Active webhook</span>
+              <span className="text-sm font-medium text-foreground">
+                {t('settings.integrations.activeWebhook')}
+              </span>
               <input
                 type="checkbox"
                 checked={webhookForm.isActive}
@@ -483,7 +518,9 @@ export function CompanySettings(): ReactElement {
             </label>
 
             <div>
-              <Label htmlFor="webhook-settings">Settings JSON</Label>
+              <Label htmlFor="webhook-settings">
+                {t('settings.integrations.settingsJson')}
+              </Label>
               <textarea
                 id="webhook-settings"
                 value={webhookForm.settingsText}
@@ -516,7 +553,9 @@ export function CompanySettings(): ReactElement {
               }
             >
               {isWebhookEditing ? <Edit3 /> : <Plus />}
-              {isWebhookEditing ? 'Save webhook' : 'Create webhook'}
+              {isWebhookEditing
+                ? t('settings.integrations.save')
+                : t('settings.integrations.create')}
             </Button>
           </form>
 
@@ -529,7 +568,7 @@ export function CompanySettings(): ReactElement {
               </div>
             ) : webhooks.length === 0 ? (
               <p className="p-5 text-sm text-muted-foreground">
-                No webhooks registered yet.
+                {t('settings.integrations.empty')}
               </p>
             ) : (
               <div className="divide-y divide-border">
@@ -546,14 +585,20 @@ export function CompanySettings(): ReactElement {
                           {webhook.name}
                         </p>
                         <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {webhook.provider} · {webhook.outboundWebhookUrl ?? 'No URL'}
+                          {webhook.provider} ·{' '}
+                          {webhook.outboundWebhookUrl ??
+                            t('settings.integrations.noUrl')}
                         </p>
                       </div>
                       <StateBadge enabled={webhook.isActive} />
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {webhook.eventTypes.length} events · secret{' '}
-                      {webhook.hasWebhookSecret ? 'set' : 'missing'}
+                      {t('settings.integrations.eventsSummary', {
+                        events: webhook.eventTypes.length,
+                        secret: webhook.hasWebhookSecret
+                          ? t('settings.integrations.secretSet')
+                          : t('settings.integrations.secretMissing'),
+                      })}
                     </p>
                   </button>
                 ))}
@@ -591,6 +636,7 @@ function FormField({
 }
 
 function StateBadge({ enabled }: { enabled: boolean }): ReactElement {
+  const { t } = useTranslation()
   return (
     <span
       className={cn(
@@ -601,7 +647,7 @@ function StateBadge({ enabled }: { enabled: boolean }): ReactElement {
       )}
     >
       {enabled ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-      {enabled ? 'Enabled' : 'Disabled'}
+      {enabled ? t('common.enabled') : t('common.disabled')}
     </span>
   )
 }
@@ -674,9 +720,9 @@ function formatJson(value: Record<string, unknown>): string {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'unknown'
+  if (Number.isNaN(date.getTime())) return i18n.t('common.unknown')
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

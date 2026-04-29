@@ -1,5 +1,6 @@
 import { useDeferredValue } from 'react'
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Activity,
   Clock3,
@@ -12,46 +13,43 @@ import {
 } from 'lucide-react'
 import type { Courier, CourierStatus, Order } from '@/api'
 import { Button } from '@/components/ui/button'
+import i18n from '@/i18n'
 import { useCourier, useCouriers, useOrders, useUpdateCourierStatus } from '@/hooks'
 import { cn } from '@/lib/utils'
+import { getStatusLabel } from '@/lib/order-utils'
 import { useUiStore } from '@/store'
 
 const COURIER_STATUS_STYLES: Record<
   CourierStatus,
   {
-    label: string
     badgeClassName: string
     dotClassName: string
   }
 > = {
   available: {
-    label: 'Available',
     badgeClassName: 'bg-emerald-500/10 text-emerald-700 ring-emerald-500/20',
     dotClassName: 'bg-emerald-500',
   },
   busy: {
-    label: 'Busy',
     badgeClassName: 'bg-amber-500/10 text-amber-700 ring-amber-500/20',
     dotClassName: 'bg-amber-500',
   },
   inactive: {
-    label: 'Inactive',
     badgeClassName: 'bg-slate-500/10 text-slate-600 ring-slate-500/20',
     dotClassName: 'bg-slate-400',
   },
   offline: {
-    label: 'Offline',
     badgeClassName: 'bg-zinc-500/10 text-zinc-600 ring-zinc-500/20',
     dotClassName: 'bg-zinc-400',
   },
   suspended: {
-    label: 'Suspended',
     badgeClassName: 'bg-red-500/10 text-red-700 ring-red-500/20',
     dotClassName: 'bg-red-500',
   },
 }
 
 export function CouriersList(): ReactElement {
+  const { t } = useTranslation()
   const selectedDate = useUiStore((state) => state.selectedDate)
   const searchQuery = useUiStore((state) => state.searchQuery)
   const selectedCourierId = useUiStore((state) => state.selectedCourierId)
@@ -107,18 +105,17 @@ export function CouriersList(): ReactElement {
       <CouriersPageShell selectedDate={selectedDate}>
         <div className="rounded-2xl border border-destructive/25 bg-destructive/10 p-6">
           <p className="text-sm font-semibold text-destructive">
-            Couriers could not be loaded.
+            {t('couriers.loadError')}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            The page is connected to the live couriers API. Retry once the
-            backend is reachable.
+            {t('couriers.loadErrorHint')}
           </p>
           <button
             type="button"
             onClick={() => void couriersQuery.refetch()}
             className="mt-4 rounded-lg border border-destructive/30 bg-background px-3 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
           >
-            Retry couriers
+            {t('couriers.retry')}
           </button>
         </div>
       </CouriersPageShell>
@@ -134,16 +131,16 @@ export function CouriersList(): ReactElement {
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
-                Courier roster
+                {t('couriers.rosterTitle')}
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Status, load and last known GPS position for the selected day.
+                {t('couriers.rosterSubtitle')}
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {ordersQuery.isFetching && (
                 <span className="rounded-full bg-muted px-2 py-1">
-                  Updating order counts
+                  {t('couriers.ordersUpdating')}
                 </span>
               )}
               {ordersQuery.isError && (
@@ -152,11 +149,14 @@ export function CouriersList(): ReactElement {
                   onClick={() => void ordersQuery.refetch()}
                   className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-500/15"
                 >
-                  Retry order counts
+                  {t('couriers.ordersRetry')}
                 </button>
               )}
               <span className="tabular-nums">
-                {visibleCouriers.length} of {couriers.length}
+                {t('couriers.visibleOfTotal', {
+                  visible: visibleCouriers.length,
+                  total: couriers.length,
+                })}
               </span>
             </div>
           </div>
@@ -169,11 +169,11 @@ export function CouriersList(): ReactElement {
                 className="hidden min-w-[900px] grid-cols-[minmax(240px,1.5fr)_minmax(150px,0.9fr)_120px_minmax(220px,1.1fr)_140px] gap-4 border-b border-border bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground md:grid"
                 role="row"
               >
-                <span>Courier</span>
-                <span>Status</span>
-                <span className="text-right">Orders</span>
-                <span>Location</span>
-                <span>Last seen</span>
+                <span>{t('couriers.columns.courier')}</span>
+                <span>{t('couriers.columns.status')}</span>
+                <span className="text-right">{t('couriers.columns.orders')}</span>
+                <span>{t('couriers.columns.location')}</span>
+                <span>{t('couriers.columns.lastSeen')}</span>
               </div>
               <div className="min-w-0 divide-y divide-border md:min-w-[900px]">
                 {visibleCouriers.map((courier) => (
@@ -221,20 +221,21 @@ function CouriersPageShell({
   selectedDate: string
   children: React.ReactNode
 }): ReactElement {
+  const { t } = useTranslation()
   return (
     <div className="flex h-full flex-col overflow-hidden bg-muted/30">
       <header className="shrink-0 border-b border-border bg-card px-6 py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Operations
+              {t('couriers.section')}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              Couriers
+              {t('couriers.pageTitle')}
             </h1>
           </div>
           <div className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
-            Selected date:{' '}
+            {t('couriers.selectedDate')}{' '}
             <span className="font-semibold text-foreground">{selectedDate}</span>
           </div>
         </div>
@@ -254,24 +255,25 @@ function CourierStatsGrid({
   stats: CourierStats
   isLoading?: boolean
 }): ReactElement {
+  const { t } = useTranslation()
   const cards = [
     {
-      label: 'Total couriers',
+      label: t('couriers.stats.total'),
       value: stats.total,
       accentClassName: 'bg-slate-900',
     },
     {
-      label: 'Online now',
+      label: t('couriers.stats.online'),
       value: stats.online,
       accentClassName: 'bg-emerald-500',
     },
     {
-      label: 'Busy on route',
+      label: t('couriers.stats.busy'),
       value: stats.busy,
       accentClassName: 'bg-amber-500',
     },
     {
-      label: 'With GPS',
+      label: t('couriers.stats.withGps'),
       value: stats.withLocation,
       accentClassName: 'bg-sky-500',
     },
@@ -317,6 +319,7 @@ function CourierRow({
   isSelected: boolean
   onSelect: (id: string) => void
 }): ReactElement {
+  const { t } = useTranslation()
   const courierName = formatCourierName(courier)
   const location = formatCourierLocation(courier)
 
@@ -330,7 +333,7 @@ function CourierRow({
         isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/20',
       )}
       aria-pressed={isSelected}
-      aria-label={`Select courier ${courierName}`}
+      aria-label={t('couriers.selectCourier', { name: courierName })}
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
@@ -359,14 +362,14 @@ function CourierRow({
         <CourierStatusBadge status={courier.status} />
         {!courier.isActive && (
           <span className="rounded-full bg-destructive/10 px-2 py-1 text-[11px] font-semibold text-destructive">
-            Disabled
+            {t('couriers.disabled')}
           </span>
         )}
       </div>
 
       <div className="flex items-center justify-between gap-3 md:justify-end">
         <span className="text-xs font-medium text-muted-foreground md:hidden">
-          Orders
+          {t('couriers.columns.orders')}
         </span>
         <span className="rounded-full border border-border bg-background px-3 py-1 text-sm font-semibold text-foreground tabular-nums">
           {assignedOrders === null ? '-' : assignedOrders}
@@ -375,7 +378,7 @@ function CourierRow({
 
       <div className="min-w-0">
         <span className="text-xs font-medium text-muted-foreground md:hidden">
-          Location
+          {t('couriers.columns.location')}
         </span>
         <p
           className={cn(
@@ -390,7 +393,7 @@ function CourierRow({
 
       <div>
         <span className="text-xs font-medium text-muted-foreground md:hidden">
-          Last seen
+          {t('couriers.columns.lastSeen')}
         </span>
         <p className="mt-1 text-xs text-muted-foreground md:mt-0">
           {formatLastSeen(courier.lastSeenAt)}
@@ -425,6 +428,8 @@ function CourierDetailCard({
   onRetryOrders: () => void
   onToggleStatus: (courier: Courier) => void
 }): ReactElement {
+  const { t } = useTranslation()
+
   if (isLoading && courier === null) {
     return <CourierDetailSkeleton onClose={onClose} />
   }
@@ -435,13 +440,13 @@ function CourierDetailCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Courier details
+              {t('couriers.detail.title')}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              The selected courier is no longer available in this roster.
+              {t('couriers.detail.missing')}
             </p>
           </div>
-          <IconButton label="Close courier details" onClick={onClose}>
+          <IconButton label={t('couriers.detail.close')} onClick={onClose}>
             <X />
           </IconButton>
         </div>
@@ -485,13 +490,13 @@ function CourierDetailCard({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <IconButton
-              label="Refresh courier details"
+              label={t('couriers.detail.refresh')}
               onClick={onRefresh}
               disabled={isRefreshing}
             >
               <RefreshCw className={cn(isRefreshing && 'animate-spin')} />
             </IconButton>
-            <IconButton label="Close courier details" onClick={onClose}>
+            <IconButton label={t('couriers.detail.close')} onClick={onClose}>
               <X />
             </IconButton>
           </div>
@@ -502,7 +507,7 @@ function CourierDetailCard({
           <CourierStatusBadge status={courier.status} />
           {!courier.isActive && (
             <span className="rounded-full bg-destructive/10 px-2 py-1 text-[11px] font-semibold text-destructive">
-              Disabled
+              {t('couriers.disabled')}
             </span>
           )}
         </div>
@@ -520,15 +525,14 @@ function CourierDetailCard({
         >
           <Power />
           {isUpdatingStatus
-            ? 'Updating status'
+            ? t('couriers.actions.updating')
             : courier.isOnline
-              ? 'Set offline'
-              : 'Set online'}
+              ? t('couriers.actions.setOffline')
+              : t('couriers.actions.setOnline')}
         </Button>
         {!canToggleStatus && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Status toggle is unavailable for disabled, inactive or suspended
-            couriers.
+            {t('couriers.actions.toggleUnavailable')}
           </p>
         )}
         {updateError !== null && (
@@ -541,49 +545,53 @@ function CourierDetailCard({
       <div className="grid grid-cols-2 gap-3 p-5">
         <CourierDetailMetric
           icon={<PackageCheck />}
-          label="Assigned"
+          label={t('couriers.detail.assigned')}
           value={isOrdersError ? '-' : detailStats.totalOrders}
         />
         <CourierDetailMetric
           icon={<Activity />}
-          label="Completed"
+          label={t('couriers.detail.completed')}
           value={isOrdersError ? '-' : detailStats.completedOrders}
         />
         <CourierDetailMetric
           icon={<Clock3 />}
-          label="Active"
+          label={t('couriers.detail.active')}
           value={isOrdersError ? '-' : detailStats.activeOrders}
         />
         <CourierDetailMetric
           icon={<UserRound />}
-          label="Profile"
-          value={courier.isActive ? 'Active' : 'Disabled'}
+          label={t('couriers.detail.profile')}
+          value={
+            courier.isActive
+              ? t('couriers.detail.profileActive')
+              : t('couriers.detail.profileDisabled')
+          }
         />
       </div>
 
       <div className="space-y-4 border-t border-border p-5">
         <CourierDetailField
           icon={<MapPin />}
-          label="GPS position"
+          label={t('couriers.detail.gpsPosition')}
           value={location.label}
           title={location.title}
         />
         <CourierDetailField
           icon={<Clock3 />}
-          label="Last seen"
+          label={t('couriers.detail.lastSeen')}
           value={formatLastSeen(courier.lastSeenAt)}
         />
         <CourierDetailField
           icon={<UserRound />}
-          label="Phone"
-          value={courier.phone ?? 'No phone'}
+          label={t('couriers.detail.phone')}
+          value={courier.phone ?? t('couriers.detail.noPhone')}
         />
       </div>
 
       <div className="border-t border-border p-5">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-semibold text-foreground">
-            Orders today
+            {t('couriers.detail.ordersToday')}
           </h3>
           {isOrdersError && (
             <button
@@ -591,17 +599,17 @@ function CourierDetailCard({
               onClick={onRetryOrders}
               className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/15"
             >
-              Retry
+              {t('couriers.detail.retryOrders')}
             </button>
           )}
         </div>
         {isOrdersError ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            Order statistics could not be loaded.
+            {t('couriers.detail.ordersLoadError')}
           </p>
         ) : orders.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            No assigned orders for the selected date.
+            {t('couriers.detail.noOrders')}
           </p>
         ) : (
           <div className="mt-3 space-y-2">
@@ -615,7 +623,7 @@ function CourierDetailCard({
                     {formatOrderNumber(order)}
                   </span>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {formatOrderStatus(order.status)}
+                    {getStatusLabel(order.status)}
                   </span>
                 </div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -625,7 +633,7 @@ function CourierDetailCard({
             ))}
             {orders.length > 4 && (
               <p className="text-xs text-muted-foreground">
-                +{orders.length - 4} more
+                {t('couriers.detail.moreOrders', { count: orders.length - 4 })}
               </p>
             )}
           </div>
@@ -716,6 +724,7 @@ function IconButton({
 }
 
 function CourierDetailSkeleton({ onClose }: { onClose: () => void }): ReactElement {
+  const { t } = useTranslation()
   return (
     <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -726,7 +735,7 @@ function CourierDetailSkeleton({ onClose }: { onClose: () => void }): ReactEleme
             <div className="h-3 w-44 animate-pulse rounded bg-muted" />
           </div>
         </div>
-        <IconButton label="Close courier details" onClick={onClose}>
+        <IconButton label={t('couriers.detail.close')} onClick={onClose}>
           <X />
         </IconButton>
       </div>
@@ -740,6 +749,7 @@ function CourierDetailSkeleton({ onClose }: { onClose: () => void }): ReactEleme
 }
 
 function OnlineBadge({ isOnline }: { isOnline: boolean }): ReactElement {
+  const { t } = useTranslation()
   return (
     <span
       className={cn(
@@ -756,7 +766,7 @@ function OnlineBadge({ isOnline }: { isOnline: boolean }): ReactElement {
         )}
         aria-hidden="true"
       />
-      {isOnline ? 'Online' : 'Offline'}
+      {isOnline ? t('couriers.status.online') : t('couriers.status.offline')}
     </span>
   )
 }
@@ -766,6 +776,7 @@ function CourierStatusBadge({
 }: {
   status: CourierStatus
 }): ReactElement {
+  const { t } = useTranslation()
   const statusStyle = COURIER_STATUS_STYLES[status]
 
   return (
@@ -779,7 +790,7 @@ function CourierStatusBadge({
         className={cn('h-1.5 w-1.5 rounded-full', statusStyle.dotClassName)}
         aria-hidden="true"
       />
-      {statusStyle.label}
+      {t(`couriers.status.${status}`)}
     </span>
   )
 }
@@ -813,18 +824,19 @@ function CouriersSkeleton(): ReactElement {
 }
 
 function CouriersEmptyState({ hasSearch }: { hasSearch: boolean }): ReactElement {
+  const { t } = useTranslation()
   return (
     <div className="p-10 text-center">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
         <span className="text-lg font-semibold text-muted-foreground">0</span>
       </div>
       <p className="mt-3 text-sm font-semibold text-foreground">
-        {hasSearch ? 'No couriers match the search.' : 'No couriers yet.'}
+        {hasSearch ? t('couriers.emptyFilters') : t('couriers.emptyRoster')}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
         {hasSearch
-          ? 'Try another name, email, phone or status.'
-          : 'Created couriers will appear here with status, load and GPS data.'}
+          ? t('couriers.emptyFiltersHint')
+          : t('couriers.emptyRosterHint')}
       </p>
     </div>
   )
@@ -914,8 +926,8 @@ function formatCourierLocation(courier: Courier): {
 } {
   if (!hasCourierLocation(courier)) {
     return {
-      label: 'No GPS position',
-      title: 'Courier has not sent a GPS location yet.',
+      label: i18n.t('couriers.noGps'),
+      title: i18n.t('couriers.noGpsTitle'),
       hasGps: false,
     }
   }
@@ -925,7 +937,7 @@ function formatCourierLocation(courier: Courier): {
 
   return {
     label: `${latitude}, ${longitude}`,
-    title: `Latitude ${latitude}, longitude ${longitude}`,
+    title: i18n.t('couriers.gpsTitle', { lat: latitude, lng: longitude }),
     hasGps: true,
   }
 }
@@ -938,22 +950,22 @@ function hasCourierLocation(courier: Courier): courier is Courier & {
 }
 
 function formatLastSeen(value: string | null): string {
-  if (!value) return 'Never'
+  if (!value) return i18n.t('common.never')
 
   const seenAt = new Date(value)
   const timestamp = seenAt.getTime()
 
-  if (Number.isNaN(timestamp)) return 'Unknown'
+  if (Number.isNaN(timestamp)) return i18n.t('couriers.unknownLastSeen')
 
   const diffMinutes = Math.max(0, Math.round((Date.now() - timestamp) / 60_000))
 
-  if (diffMinutes < 1) return 'Just now'
-  if (diffMinutes < 60) return `${diffMinutes} min ago`
+  if (diffMinutes < 1) return i18n.t('common.justNow')
+  if (diffMinutes < 60) return i18n.t('common.minutesAgo', { count: diffMinutes })
 
   const diffHours = Math.round(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours} h ago`
+  if (diffHours < 24) return i18n.t('common.hoursAgo', { count: diffHours })
 
-  return seenAt.toLocaleDateString('en-US', {
+  return seenAt.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -962,12 +974,9 @@ function formatLastSeen(value: string | null): string {
 }
 
 function formatOrderNumber(order: Order): string {
-  return order.orderNumber ?? order.externalId ?? `Order ${order.id.slice(0, 8)}`
-}
-
-function formatOrderStatus(status: Order['status']): string {
-  return status
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+  return (
+    order.orderNumber ??
+    order.externalId ??
+    i18n.t('couriers.orderFallback', { id: order.id.slice(0, 8) })
+  )
 }

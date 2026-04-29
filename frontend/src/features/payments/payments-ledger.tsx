@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Banknote,
   CheckCircle2,
@@ -19,6 +20,7 @@ import type {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import i18n from '@/i18n'
 import {
   useCouriers,
   usePayment,
@@ -28,12 +30,12 @@ import {
 } from '@/hooks'
 import { cn } from '@/lib/utils'
 
-const PAYMENT_STATUS_OPTIONS: Array<{ value: PaymentStatus; label: string }> = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'calculated', label: 'Calculated' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'disputed', label: 'Disputed' },
+const PAYMENT_STATUS_VALUES: PaymentStatus[] = [
+  'draft',
+  'calculated',
+  'approved',
+  'paid',
+  'disputed',
 ]
 
 const STATUS_STYLES: Record<PaymentStatus, string> = {
@@ -45,6 +47,7 @@ const STATUS_STYLES: Record<PaymentStatus, string> = {
 }
 
 export function PaymentsLedger(): ReactElement {
+  const { t } = useTranslation()
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | ''>('')
   const [courierFilter, setCourierFilter] = useState('')
@@ -108,10 +111,10 @@ export function PaymentsLedger(): ReactElement {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Payout register
+              {t('payments.ledger.title')}
             </p>
             <h2 className="mt-1 text-lg font-semibold text-foreground">
-              Payments list and details
+              {t('payments.ledger.subtitle')}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -119,21 +122,21 @@ export function PaymentsLedger(): ReactElement {
               type="button"
               onClick={() => void paymentsQuery.refetch()}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent"
-              aria-label="Refresh payments"
+              aria-label={t('payments.ledger.refresh')}
             >
               <RefreshCw
                 className={cn('h-4 w-4', paymentsQuery.isFetching && 'animate-spin')}
               />
             </button>
             <Button type="button" variant="outline" size="sm" onClick={resetFilters}>
-              Reset filters
+              {t('payments.ledger.resetFilters')}
             </Button>
           </div>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <Label htmlFor="payment-status">Status</Label>
+            <Label htmlFor="payment-status">{t('payments.ledger.filters.status')}</Label>
             <select
               id="payment-status"
               value={statusFilter}
@@ -142,24 +145,24 @@ export function PaymentsLedger(): ReactElement {
               }
               className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <option value="">All statuses</option>
-              {PAYMENT_STATUS_OPTIONS.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
+              <option value="">{t('payments.ledger.allStatuses')}</option>
+              {PAYMENT_STATUS_VALUES.map((status) => (
+                <option key={status} value={status}>
+                  {t(`payments.status.${status}`)}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <Label htmlFor="payment-courier">Courier</Label>
+            <Label htmlFor="payment-courier">{t('payments.ledger.filters.courier')}</Label>
             <select
               id="payment-courier"
               value={courierFilter}
               onChange={(event) => setCourierFilter(event.target.value)}
               className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <option value="">All couriers</option>
+              <option value="">{t('payments.ledger.allCouriers')}</option>
               {couriers.map((courier) => (
                 <option key={courier.id} value={courier.id}>
                   {formatCourierName(courier)}
@@ -169,7 +172,7 @@ export function PaymentsLedger(): ReactElement {
           </div>
 
           <div>
-            <Label htmlFor="payment-start">Period starts after</Label>
+            <Label htmlFor="payment-start">{t('payments.ledger.filters.periodFrom')}</Label>
             <Input
               id="payment-start"
               type="date"
@@ -180,7 +183,7 @@ export function PaymentsLedger(): ReactElement {
           </div>
 
           <div>
-            <Label htmlFor="payment-end">Period ends before</Label>
+            <Label htmlFor="payment-end">{t('payments.ledger.filters.periodTo')}</Label>
             <Input
               id="payment-end"
               type="date"
@@ -238,6 +241,8 @@ function PaymentsTable({
   onRetry: () => void
   onSelect: (paymentId: string) => void
 }): ReactElement {
+  const { t } = useTranslation()
+
   if (isLoading) {
     return (
       <div className="space-y-3 p-5">
@@ -253,10 +258,10 @@ function PaymentsTable({
       <div className="flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <FileText className="h-9 w-9 text-muted-foreground" />
         <p className="mt-3 text-sm font-semibold text-foreground">
-          Payments could not be loaded.
+          {t('payments.ledger.loadError')}
         </p>
         <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-4">
-          Retry
+          {t('payments.ledger.loadErrorRetry')}
         </Button>
       </div>
     )
@@ -267,10 +272,10 @@ function PaymentsTable({
       <div className="flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <Banknote className="h-9 w-9 text-muted-foreground" />
         <p className="mt-3 text-sm font-semibold text-foreground">
-          No payments match the filters.
+          {t('payments.ledger.empty')}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Calculated payouts will appear here with status and breakdown details.
+          {t('payments.ledger.emptyHint')}
         </p>
       </div>
     )
@@ -282,11 +287,11 @@ function PaymentsTable({
         className="hidden min-w-[900px] grid-cols-[minmax(200px,1fr)_180px_140px_140px_minmax(220px,1fr)_48px] gap-4 border-b border-border bg-muted/40 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground md:grid"
         role="row"
       >
-        <span>Courier</span>
-        <span>Period</span>
-        <span>Amount</span>
-        <span>Status</span>
-        <span>Breakdown</span>
+        <span>{t('payments.ledger.columns.courier')}</span>
+        <span>{t('payments.ledger.columns.period')}</span>
+        <span>{t('payments.ledger.columns.amount')}</span>
+        <span>{t('payments.ledger.columns.status')}</span>
+        <span>{t('payments.ledger.columns.breakdown')}</span>
         <span />
       </div>
       <div className="min-w-0 divide-y divide-border md:min-w-[900px]">
@@ -353,16 +358,18 @@ function PaymentDetailPanel({
   onApprove: (payment: Payment) => void
   onDispute: (payment: Payment) => void
 }): ReactElement {
+  const { t } = useTranslation()
+
   if (payment === null) {
     return (
       <aside className="border-t border-border bg-background p-5 xl:border-l xl:border-t-0">
         <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
           <Scale className="h-9 w-9 text-muted-foreground" />
           <p className="mt-3 text-sm font-semibold text-foreground">
-            Select a payment
+            {t('payments.detail.selectPayment')}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Click a row to inspect breakdown and approve or dispute eligible payouts.
+            {t('payments.detail.selectPaymentHint')}
           </p>
         </div>
       </aside>
@@ -379,7 +386,7 @@ function PaymentDetailPanel({
       <div className="flex items-start justify-between gap-3 border-b border-border p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Payment detail
+            {t('payments.detail.title')}
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">
             {formatCourierName(couriersById.get(payment.courierId))}
@@ -389,7 +396,7 @@ function PaymentDetailPanel({
           type="button"
           onClick={onClose}
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-accent"
-          aria-label="Close payment detail"
+          aria-label={t('payments.detail.close')}
         >
           <X className="h-4 w-4" />
         </button>
@@ -398,22 +405,36 @@ function PaymentDetailPanel({
       <div className="space-y-5 p-5">
         {isLoading && (
           <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
-            Refreshing payment detail...
+            {t('payments.detail.refreshing')}
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <DetailMetric label="Amount" value={formatMoney(payment.amount, payment.currency)} />
-          <DetailMetric label="Status" value={formatPaymentStatus(payment.status)} />
-          <DetailMetric label="Period" value={formatPeriod(payment.periodStart, payment.periodEnd)} />
-          <DetailMetric label="Rules" value={summary?.appliedRuleCount ?? components.length} />
+          <DetailMetric
+            label={t('payments.detail.amount')}
+            value={formatMoney(payment.amount, payment.currency)}
+          />
+          <DetailMetric
+            label={t('payments.detail.status')}
+            value={t(`payments.status.${payment.status}`)}
+          />
+          <DetailMetric
+            label={t('payments.detail.period')}
+            value={formatPeriod(payment.periodStart, payment.periodEnd)}
+          />
+          <DetailMetric
+            label={t('payments.detail.rules')}
+            value={summary?.appliedRuleCount ?? components.length}
+          />
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold text-foreground">Breakdown</h4>
+          <h4 className="text-sm font-semibold text-foreground">
+            {t('payments.detail.breakdown')}
+          </h4>
           {components.length === 0 ? (
             <p className="mt-2 rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
-              This payment does not include component-level breakdown data.
+              {t('payments.detail.breakdownEmpty')}
             </p>
           ) : (
             <div className="mt-3 space-y-2">
@@ -448,7 +469,9 @@ function PaymentDetailPanel({
         </div>
 
         <div>
-          <Label htmlFor="payment-transition-reason">Transition reason</Label>
+          <Label htmlFor="payment-transition-reason">
+            {t('payments.detail.transitionReason')}
+          </Label>
           <textarea
             id="payment-transition-reason"
             value={reason}
@@ -456,7 +479,7 @@ function PaymentDetailPanel({
             maxLength={500}
             rows={3}
             className="mt-2 w-full resize-none rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="Optional finance note for approval or dispute."
+            placeholder={t('payments.detail.transitionHint')}
           />
         </div>
 
@@ -473,7 +496,7 @@ function PaymentDetailPanel({
             onClick={() => onApprove(payment)}
           >
             <CheckCircle2 />
-            Approve
+            {t('payments.detail.approve')}
           </Button>
           <Button
             type="button"
@@ -483,14 +506,13 @@ function PaymentDetailPanel({
             className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Scale />
-            Dispute
+            {t('payments.detail.dispute')}
           </Button>
         </div>
 
         {!canApprove && (
           <p className="text-xs text-muted-foreground">
-            Approval actions are hidden by backend permissions and disabled here for
-            the current role.
+            {t('payments.detail.hiddenActions')}
           </p>
         )}
       </div>
@@ -518,6 +540,7 @@ function DetailMetric({
 }
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }): ReactElement {
+  const { t } = useTranslation()
   return (
     <span
       className={cn(
@@ -525,7 +548,7 @@ function PaymentStatusBadge({ status }: { status: PaymentStatus }): ReactElement
         STATUS_STYLES[status],
       )}
     >
-      {formatPaymentStatus(status)}
+      {t(`payments.status.${status}`)}
     </span>
   )
 }
@@ -535,7 +558,7 @@ function mapCouriersById(couriers: Courier[]): Map<string, Courier> {
 }
 
 function formatCourierName(courier: Courier | undefined): string {
-  if (!courier) return 'Unknown courier'
+  if (!courier) return i18n.t('payments.detail.unknownCourier')
 
   const name = `${courier.firstName} ${courier.lastName ?? ''}`.trim()
   return name || courier.email
@@ -547,9 +570,9 @@ function formatPeriod(start: string, end: string): string {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown'
+  if (Number.isNaN(date.getTime())) return i18n.t('payments.detail.unknown')
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
   })
@@ -559,22 +582,34 @@ function formatMoney(value: string | number, currency: string): string {
   const amount = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(amount)) return `${value} ${currency}`
 
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
   }).format(amount)
 }
 
-function formatPaymentStatus(status: PaymentStatus): string {
-  return status.charAt(0).toUpperCase() + status.slice(1)
-}
-
 function formatRuleType(value: string): string {
+  const key = toCamelCase(value)
+  const translated = i18n.t(`payments.rules.types.${key}`, { defaultValue: '' })
+  if (translated) return translated
+
   return value
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+}
+
+function toCamelCase(value: string): string {
+  const parts = value.split('_')
+  if (parts.length === 1) return parts[0]
+  return (
+    parts[0] +
+    parts
+      .slice(1)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
+  )
 }
 
 function getBreakdownComponents(payment: Payment): PaymentBreakdownItem[] {
@@ -583,15 +618,13 @@ function getBreakdownComponents(payment: Payment): PaymentBreakdownItem[] {
 
 function formatBreakdownSummary(payment: Payment): string {
   const summary = payment.breakdown.summary
-  if (!summary) return 'No summary'
+  if (!summary) return i18n.t('payments.detail.noSummary')
 
-  const parts = [
-    `${summary.deliveredOrdersCount ?? 0} orders`,
-    `${summary.totalDistanceKm ?? 0} km`,
-    `${summary.appliedRuleCount ?? 0} rules`,
-  ]
-
-  return parts.join(' · ')
+  return i18n.t('payments.detail.summary', {
+    orders: summary.deliveredOrdersCount ?? 0,
+    distance: summary.totalDistanceKm ?? 0,
+    rules: summary.appliedRuleCount ?? 0,
+  })
 }
 
 function dateInputToIso(value: string, endOfDay: boolean): string {

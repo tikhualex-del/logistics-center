@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent, ReactElement, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   BadgeDollarSign,
@@ -13,6 +14,7 @@ import type { PaymentRule, PaymentRuleType, UpsertPaymentRuleDto } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import i18n from '@/i18n'
 import {
   useCreatePaymentRule,
   usePaymentRules,
@@ -22,82 +24,51 @@ import {
 import { cn } from '@/lib/utils'
 import { PaymentsLedger } from './payments-ledger'
 
-const RULE_TYPE_OPTIONS: Array<{
-  type: PaymentRuleType
-  label: string
-  actionLabel: string
-  description: string
-  valueLabel: string
-  valueSuffix: string
-}> = [
-  {
-    type: 'zone_rate',
-    label: 'Zone rate',
-    actionLabel: 'Pay zone base',
-    description: 'Applies a fixed amount when a completed route touches a zone.',
-    valueLabel: 'Zone amount',
-    valueSuffix: 'RUB',
-  },
-  {
-    type: 'per_km',
-    label: 'Per kilometer',
-    actionLabel: 'Pay per km',
-    description: 'Multiplies completed route distance by the configured rate.',
-    valueLabel: 'Rate per km',
-    valueSuffix: 'RUB/km',
-  },
-  {
-    type: 'per_order',
-    label: 'Per order',
-    actionLabel: 'Pay per order',
-    description: 'Adds a fixed amount for every delivered order.',
-    valueLabel: 'Amount per order',
-    valueSuffix: 'RUB/order',
-  },
-  {
-    type: 'bonus',
-    label: 'Bonus',
-    actionLabel: 'Add bonus',
-    description: 'Adds a bonus when a metric reaches the threshold.',
-    valueLabel: 'Bonus amount',
-    valueSuffix: 'RUB',
-  },
-  {
-    type: 'penalty',
-    label: 'Penalty',
-    actionLabel: 'Apply penalty',
-    description: 'Subtracts a penalty when a metric reaches the threshold.',
-    valueLabel: 'Penalty amount',
-    valueSuffix: 'RUB',
-  },
-  {
-    type: 'minimum_guarantee',
-    label: 'Minimum guarantee',
-    actionLabel: 'Top up minimum',
-    description: 'Raises the calculated payout to a guaranteed floor.',
-    valueLabel: 'Guarantee amount',
-    valueSuffix: 'RUB',
-  },
+const RULE_TYPE_VALUES: PaymentRuleType[] = [
+  'zone_rate',
+  'per_km',
+  'per_order',
+  'bonus',
+  'penalty',
+  'minimum_guarantee',
 ]
 
-const METRIC_OPTIONS = [
-  { value: 'delivered_orders', label: 'Delivered orders' },
-  { value: 'completed_routes', label: 'Completed routes' },
-  { value: 'distance_km', label: 'Distance, km' },
-  { value: 'late_orders', label: 'Late orders' },
-]
+const METRIC_VALUES = [
+  'delivered_orders',
+  'completed_routes',
+  'distance_km',
+  'late_orders',
+] as const
 
-const PERIOD_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-]
+const PERIOD_VALUES = ['daily', 'weekly', 'monthly'] as const
 
 const SAMPLE_METRICS = {
   distanceKm: 42,
   deliveredOrders: 18,
   completedRoutes: 6,
   lateOrders: 1,
+}
+
+function ruleTypeToCamelCaseKey(type: PaymentRuleType): string {
+  const map: Record<PaymentRuleType, string> = {
+    zone_rate: 'zoneRate',
+    per_km: 'perKilometer',
+    per_order: 'perOrder',
+    bonus: 'bonus',
+    penalty: 'penalty',
+    minimum_guarantee: 'minGuarantee',
+  }
+  return map[type]
+}
+
+function metricToCamelCaseKey(metric: string): string {
+  const map: Record<string, string> = {
+    delivered_orders: 'deliveredOrders',
+    completed_routes: 'completedRoutes',
+    distance_km: 'distanceKm',
+    late_orders: 'lateOrders',
+  }
+  return map[metric] ?? metric
 }
 
 interface RuleFormState {
@@ -115,23 +86,26 @@ interface RuleFormState {
   changeReason: string
 }
 
-const DEFAULT_FORM: RuleFormState = {
-  id: null,
-  name: 'New delivery rule',
-  ruleType: 'per_order',
-  value: '250',
-  zoneId: '',
-  metric: 'delivered_orders',
-  threshold: '10',
-  period: 'weekly',
-  isActive: true,
-  effectiveFrom: '',
-  effectiveTo: '',
-  changeReason: '',
+function getDefaultForm(): RuleFormState {
+  return {
+    id: null,
+    name: i18n.t('payments.rules.defaultName'),
+    ruleType: 'per_order',
+    value: '250',
+    zoneId: '',
+    metric: 'delivered_orders',
+    threshold: '10',
+    period: 'weekly',
+    isActive: true,
+    effectiveFrom: '',
+    effectiveTo: '',
+    changeReason: '',
+  }
 }
 
 export function PaymentRulesConstructor(): ReactElement {
-  const [form, setForm] = useState<RuleFormState>(DEFAULT_FORM)
+  const { t } = useTranslation()
+  const [form, setForm] = useState<RuleFormState>(() => getDefaultForm())
   const [simulation, setSimulation] = useState<SimulationResult | null>(null)
 
   const rulesQuery = usePaymentRules()
@@ -141,7 +115,6 @@ export function PaymentRulesConstructor(): ReactElement {
 
   const rules = useMemo(() => rulesQuery.data ?? [], [rulesQuery.data])
   const zones = useMemo(() => zonesQuery.data ?? [], [zonesQuery.data])
-  const selectedType = getRuleTypeOption(form.ruleType)
   const activeRules = rules.filter((rule) => rule.isActive)
   const inactiveRules = rules.length - activeRules.length
   const isEditing = form.id !== null
@@ -159,7 +132,7 @@ export function PaymentRulesConstructor(): ReactElement {
   }
 
   function resetForm(): void {
-    setForm(DEFAULT_FORM)
+    setForm(getDefaultForm())
     setSimulation(null)
     createRuleMutation.reset()
     updateRuleMutation.reset()
@@ -183,8 +156,8 @@ export function PaymentRulesConstructor(): ReactElement {
     if (!payload) {
       setSimulation({
         amount: 0,
-        label: 'Simulation blocked',
-        details: 'Fill in the required condition fields before saving.',
+        label: t('payments.rules.simulationBlocked'),
+        details: t('payments.rules.enterNonNegative'),
         isPositive: false,
       })
       return
@@ -197,24 +170,32 @@ export function PaymentRulesConstructor(): ReactElement {
     }
   }
 
+  const selectedTypeKey = ruleTypeToCamelCaseKey(form.ruleType)
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-muted/30">
       <header className="shrink-0 border-b border-border bg-card px-6 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Compensation
+              {t('payments.rules.section')}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              Payment rules
+              {t('payments.rules.title')}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <StatusPill label="Active" value={activeRules.length} />
-            <StatusPill label="Inactive" value={inactiveRules} />
+            <StatusPill
+              label={t('payments.rules.statusPill.active')}
+              value={activeRules.length}
+            />
+            <StatusPill
+              label={t('payments.rules.statusPill.inactive')}
+              value={inactiveRules}
+            />
             <Button type="button" variant="outline" size="sm" onClick={resetForm}>
               <Plus />
-              New rule
+              {t('payments.rules.newRule')}
             </Button>
           </div>
         </div>
@@ -241,15 +222,16 @@ export function PaymentRulesConstructor(): ReactElement {
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <h2 className="text-base font-semibold text-foreground">
-                      Rule constructor
+                      {t('payments.rules.constructorTitle')}
                     </h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Compose the condition block, map it to a payout action and
-                      preview the rule before saving.
+                      {t('payments.rules.constructorHint')}
                     </p>
                   </div>
                   <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-                    {isEditing ? 'Version update' : 'New version 1'}
+                    {isEditing
+                      ? t('payments.rules.versionUpdate')
+                      : t('payments.rules.newVersionOne')}
                   </span>
                 </div>
               </div>
@@ -257,11 +239,11 @@ export function PaymentRulesConstructor(): ReactElement {
               <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <RuleBlock
                   tone="condition"
-                  title="CONDITION"
+                  title={t('payments.rules.conditionSection')}
                   icon={<SlidersHorizontal />}
                 >
                   <div className="space-y-4">
-                    <FormField label="Rule name" htmlFor="rule-name">
+                    <FormField label={t('payments.rules.name')} htmlFor="rule-name">
                       <Input
                         id="rule-name"
                         value={form.name}
@@ -271,7 +253,7 @@ export function PaymentRulesConstructor(): ReactElement {
                       />
                     </FormField>
 
-                    <FormField label="Rule type" htmlFor="rule-type">
+                    <FormField label={t('payments.rules.type')} htmlFor="rule-type">
                       <select
                         id="rule-type"
                         value={form.ruleType}
@@ -280,9 +262,9 @@ export function PaymentRulesConstructor(): ReactElement {
                         }
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        {RULE_TYPE_OPTIONS.map((option) => (
-                          <option key={option.type} value={option.type}>
-                            {option.label}
+                        {RULE_TYPE_VALUES.map((type) => (
+                          <option key={type} value={type}>
+                            {t(`payments.rules.types.${ruleTypeToCamelCaseKey(type)}`)}
                           </option>
                         ))}
                       </select>
@@ -298,18 +280,25 @@ export function PaymentRulesConstructor(): ReactElement {
                   </span>
                 </div>
 
-                <RuleBlock tone="action" title="ACTION" icon={<BadgeDollarSign />}>
+                <RuleBlock
+                  tone="action"
+                  title={t('payments.rules.actionSection')}
+                  icon={<BadgeDollarSign />}
+                >
                   <div className="space-y-4">
                     <div className="rounded-lg border border-border bg-background p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        {selectedType.actionLabel}
+                        {t(`payments.rules.actionTitles.${form.ruleType}`)}
                       </p>
                       <p className="mt-2 text-sm text-foreground">
-                        {selectedType.description}
+                        {t(`payments.rules.actionDescriptions.${form.ruleType}`)}
                       </p>
                     </div>
 
-                    <FormField label={selectedType.valueLabel} htmlFor="rule-value">
+                    <FormField
+                      label={t(`payments.rules.valueLabels.${form.ruleType}`)}
+                      htmlFor="rule-value"
+                    >
                       <div className="flex overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
                         <input
                           id="rule-value"
@@ -322,13 +311,16 @@ export function PaymentRulesConstructor(): ReactElement {
                           required
                         />
                         <span className="flex items-center border-l border-border px-3 text-xs font-medium text-muted-foreground">
-                          {selectedType.valueSuffix}
+                          {t(`payments.rules.valueSuffixes.${form.ruleType}`)}
                         </span>
                       </div>
                     </FormField>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <FormField label="Effective from" htmlFor="effective-from">
+                      <FormField
+                        label={t('payments.rules.effectiveFrom')}
+                        htmlFor="effective-from"
+                      >
                         <Input
                           id="effective-from"
                           type="datetime-local"
@@ -338,7 +330,10 @@ export function PaymentRulesConstructor(): ReactElement {
                           }
                         />
                       </FormField>
-                      <FormField label="Effective to" htmlFor="effective-to">
+                      <FormField
+                        label={t('payments.rules.effectiveTo')}
+                        htmlFor="effective-to"
+                      >
                         <Input
                           id="effective-to"
                           type="datetime-local"
@@ -352,7 +347,7 @@ export function PaymentRulesConstructor(): ReactElement {
 
                     <label className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
                       <span className="text-sm font-medium text-foreground">
-                        Active rule
+                        {t('payments.rules.activeRule')}
                       </span>
                       <input
                         type="checkbox"
@@ -370,7 +365,9 @@ export function PaymentRulesConstructor(): ReactElement {
               <div className="border-t border-border p-5">
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
                   <div>
-                    <Label htmlFor="change-reason">Change reason</Label>
+                    <Label htmlFor="change-reason">
+                      {t('payments.rules.changeReason')}
+                    </Label>
                     <textarea
                       id="change-reason"
                       value={form.changeReason}
@@ -380,19 +377,20 @@ export function PaymentRulesConstructor(): ReactElement {
                       maxLength={255}
                       rows={3}
                       className="mt-2 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      placeholder="Describe why this rule is being added or versioned."
+                      placeholder={t('payments.rules.changeReasonHint')}
                     />
                   </div>
 
                   <div className="rounded-lg border border-border bg-background p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Draft payload
+                      {t('payments.rules.draftPayload')}
                     </p>
                     <p className="mt-2 text-sm font-medium text-foreground">
-                      {selectedType.label}
+                      {t(`payments.rules.types.${selectedTypeKey}`)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Conditions: {formatConditions(draftConditions)}
+                      {t('payments.rules.conditionsLabel')}{' '}
+                      {formatConditions(draftConditions)}
                     </p>
                   </div>
                 </div>
@@ -411,15 +409,15 @@ export function PaymentRulesConstructor(): ReactElement {
                     disabled={isSaving}
                   >
                     <Calculator />
-                    Simulate
+                    {t('payments.rules.simulate')}
                   </Button>
                   <Button type="submit" disabled={isSaving}>
                     {isEditing ? <CopyPlus /> : <Plus />}
                     {isSaving
-                      ? 'Saving'
+                      ? t('common.saving')
                       : isEditing
-                        ? 'Create new version'
-                        : 'Save rule'}
+                        ? t('payments.rules.createVersion')
+                        : t('payments.rules.saveRule')}
                   </Button>
                 </div>
               </div>
@@ -454,33 +452,37 @@ function RuleTypeStrip({
   typeCounts: Map<PaymentRuleType, number>
   onSelect: (type: PaymentRuleType) => void
 }): ReactElement {
+  const { t } = useTranslation()
   return (
     <section className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
-      {RULE_TYPE_OPTIONS.map((option) => (
-        <button
-          key={option.type}
-          type="button"
-          onClick={() => onSelect(option.type)}
-          className={cn(
-            'rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent',
-            selectedType === option.type
-              ? 'border-primary ring-1 ring-primary/20'
-              : 'border-border',
-          )}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-foreground">
-              {option.label}
-            </span>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular-nums">
-              {typeCounts.get(option.type) ?? 0}
-            </span>
-          </div>
-          <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-            {option.actionLabel}
-          </p>
-        </button>
-      ))}
+      {RULE_TYPE_VALUES.map((type) => {
+        const key = ruleTypeToCamelCaseKey(type)
+        return (
+          <button
+            key={type}
+            type="button"
+            onClick={() => onSelect(type)}
+            className={cn(
+              'rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent',
+              selectedType === type
+                ? 'border-primary ring-1 ring-primary/20'
+                : 'border-border',
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                {t(`payments.rules.types.${key}`)}
+              </span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular-nums">
+                {typeCounts.get(type) ?? 0}
+              </span>
+            </div>
+            <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+              {t(`payments.rules.actionTitles.${type}`)}
+            </p>
+          </button>
+        )
+      })}
     </section>
   )
 }
@@ -553,9 +555,11 @@ function ConditionFields({
     value: RuleFormState[Key],
   ) => void
 }): ReactElement {
+  const { t } = useTranslation()
+
   if (form.ruleType === 'zone_rate') {
     return (
-      <FormField label="Zone" htmlFor="zone-id">
+      <FormField label={t('payments.rules.labels.zoneMatch')} htmlFor="zone-id">
         <select
           id="zone-id"
           value={form.zoneId}
@@ -563,7 +567,7 @@ function ConditionFields({
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           required
         >
-          <option value="">Select zone</option>
+          <option value="">{t('payments.rules.selectZone')}</option>
           {zones.map((zone) => (
             <option key={zone.id} value={zone.id}>
               {zone.name}
@@ -577,21 +581,21 @@ function ConditionFields({
   if (form.ruleType === 'bonus' || form.ruleType === 'penalty') {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        <FormField label="Metric" htmlFor="metric">
+        <FormField label={t('payments.rules.metric')} htmlFor="metric">
           <select
             id="metric"
             value={form.metric}
             onChange={(event) => onChange('metric', event.target.value)}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {METRIC_OPTIONS.map((metric) => (
-              <option key={metric.value} value={metric.value}>
-                {metric.label}
+            {METRIC_VALUES.map((metric) => (
+              <option key={metric} value={metric}>
+                {t(`payments.rules.metrics.${metricToCamelCaseKey(metric)}`)}
               </option>
             ))}
           </select>
         </FormField>
-        <FormField label="Threshold" htmlFor="threshold">
+        <FormField label={t('payments.rules.threshold')} htmlFor="threshold">
           <Input
             id="threshold"
             type="number"
@@ -608,16 +612,16 @@ function ConditionFields({
 
   if (form.ruleType === 'minimum_guarantee') {
     return (
-      <FormField label="Guarantee period" htmlFor="period">
+      <FormField label={t('payments.rules.guaranteePeriod')} htmlFor="period">
         <select
           id="period"
           value={form.period}
           onChange={(event) => onChange('period', event.target.value)}
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {PERIOD_OPTIONS.map((period) => (
-            <option key={period.value} value={period.value}>
-              {period.label}
+          {PERIOD_VALUES.map((period) => (
+            <option key={period} value={period}>
+              {t(`payments.rules.periods.${period}`)}
             </option>
           ))}
         </select>
@@ -627,7 +631,7 @@ function ConditionFields({
 
   return (
     <div className="rounded-lg border border-border bg-background p-3 text-sm text-muted-foreground">
-      Applies to every completed route in the selected calculation period.
+      {t('payments.rules.conditionsEveryRoute')}
     </div>
   )
 }
@@ -644,6 +648,7 @@ function SimulationPanel({
 }: {
   simulation: SimulationResult | null
 }): ReactElement {
+  const { t } = useTranslation()
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center gap-3">
@@ -652,18 +657,17 @@ function SimulationPanel({
         </span>
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Simulation
+            {t('payments.rules.simulation')}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Uses a sample courier period.
+            {t('payments.rules.simulationHint')}
           </p>
         </div>
       </div>
 
       {simulation === null ? (
         <div className="mt-5 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-          Press Simulate to preview how the draft rule behaves against sample
-          route metrics.
+          {t('payments.rules.simulationHintDefault')}
         </div>
       ) : (
         <div className="mt-5 rounded-lg border border-border bg-background p-4">
@@ -685,10 +689,22 @@ function SimulationPanel({
       )}
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
-        <SampleMetric label="Orders" value={SAMPLE_METRICS.deliveredOrders} />
-        <SampleMetric label="Distance" value={`${SAMPLE_METRICS.distanceKm} km`} />
-        <SampleMetric label="Routes" value={SAMPLE_METRICS.completedRoutes} />
-        <SampleMetric label="Late" value={SAMPLE_METRICS.lateOrders} />
+        <SampleMetric
+          label={t('payments.rules.sampleOrders')}
+          value={SAMPLE_METRICS.deliveredOrders}
+        />
+        <SampleMetric
+          label={t('payments.rules.sampleDistance')}
+          value={`${SAMPLE_METRICS.distanceKm} ${t('payments.rules.valueSuffix.rubPerKm').replace('₽/', '')}`}
+        />
+        <SampleMetric
+          label={t('payments.rules.sampleRoutes')}
+          value={SAMPLE_METRICS.completedRoutes}
+        />
+        <SampleMetric
+          label={t('payments.rules.sampleLate')}
+          value={SAMPLE_METRICS.lateOrders}
+        />
       </dl>
     </section>
   )
@@ -724,15 +740,16 @@ function RulesPanel({
   onRetry: () => void
   onEdit: (rule: PaymentRule) => void
 }): ReactElement {
+  const { t } = useTranslation()
   return (
     <section className="rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-border p-5">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Current rules
+            {t('payments.rules.currentRules')}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Latest active and inactive versions.
+            {t('payments.rules.currentRulesHint')}
           </p>
         </div>
         {isError && (
@@ -740,7 +757,7 @@ function RulesPanel({
             type="button"
             onClick={onRetry}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent"
-            aria-label="Retry payment rules"
+            aria-label={t('payments.rules.retry')}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -755,12 +772,11 @@ function RulesPanel({
         </div>
       ) : isError ? (
         <div className="p-5 text-sm text-muted-foreground">
-          Payment rules could not be loaded.
+          {t('payments.rules.loadError')}
         </div>
       ) : rules.length === 0 ? (
         <div className="p-5 text-sm text-muted-foreground">
-          No payment rules yet. Save the constructor draft to create the first
-          rule.
+          {t('payments.rules.empty')}
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -777,7 +793,8 @@ function RulesPanel({
                     {rule.name}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {getRuleTypeOption(rule.ruleType).label} · v{rule.version}
+                    {t(`payments.rules.types.${ruleTypeToCamelCaseKey(rule.ruleType)}`)}{' '}
+                    · {t('payments.rules.versionShort', { version: rule.version })}
                   </p>
                 </div>
                 <span
@@ -788,7 +805,7 @@ function RulesPanel({
                       : 'bg-zinc-500/10 text-zinc-600',
                   )}
                 >
-                  {rule.isActive ? 'Active' : 'Inactive'}
+                  {rule.isActive ? t('common.active') : t('common.inactive')}
                 </span>
               </div>
               <div className="mt-3 flex items-center justify-between gap-3 text-xs">
@@ -830,10 +847,6 @@ function countRulesByType(rules: PaymentRule[]): Map<PaymentRuleType, number> {
   }
 
   return counts
-}
-
-function getRuleTypeOption(type: PaymentRuleType) {
-  return RULE_TYPE_OPTIONS.find((option) => option.type === type) ?? RULE_TYPE_OPTIONS[0]
 }
 
 function buildConditions(form: RuleFormState): Record<string, unknown> | null {
@@ -902,8 +915,8 @@ function simulateRule(
   if (!Number.isFinite(value) || value < 0) {
     return {
       amount: 0,
-      label: 'Invalid action',
-      details: 'Enter a non-negative numeric payout value.',
+      label: i18n.t('payments.rules.invalidAction'),
+      details: i18n.t('payments.rules.enterNonNegative'),
       isPositive: false,
     }
   }
@@ -913,25 +926,35 @@ function simulateRule(
       const zone = zones.find((item) => item.id === form.zoneId)
       return {
         amount: form.zoneId ? value : 0,
-        label: 'Zone match',
+        label: i18n.t('payments.rules.labels.zoneMatch'),
         details: form.zoneId
-          ? `Sample route touches ${zone?.name ?? 'the selected zone'}.`
-          : 'Select a zone to simulate this rule.',
+          ? zone
+            ? i18n.t('payments.rules.simulationDetails.zoneMatchSelected', {
+                zone: zone.name,
+              })
+            : i18n.t('payments.rules.simulationDetails.zoneMatchDefault')
+          : i18n.t('payments.rules.simulationDetails.zoneMatchEmpty'),
         isPositive: form.zoneId.length > 0,
       }
     }
     case 'per_km':
       return {
         amount: value * SAMPLE_METRICS.distanceKm,
-        label: 'Distance payout',
-        details: `${SAMPLE_METRICS.distanceKm} km x ${formatMoney(value)} per km.`,
+        label: i18n.t('payments.rules.labels.distancePayout'),
+        details: i18n.t('payments.rules.simulationDetails.distancePayout', {
+          distance: SAMPLE_METRICS.distanceKm,
+          rate: formatMoney(value),
+        }),
         isPositive: true,
       }
     case 'per_order':
       return {
         amount: value * SAMPLE_METRICS.deliveredOrders,
-        label: 'Delivered-order payout',
-        details: `${SAMPLE_METRICS.deliveredOrders} delivered orders x ${formatMoney(value)}.`,
+        label: i18n.t('payments.rules.labels.deliveredPayout'),
+        details: i18n.t('payments.rules.simulationDetails.deliveredPayout', {
+          orders: SAMPLE_METRICS.deliveredOrders,
+          rate: formatMoney(value),
+        }),
         isPositive: true,
       }
     case 'bonus':
@@ -942,16 +965,27 @@ function simulateRule(
       const amount = passes ? value : 0
       return {
         amount: form.ruleType === 'penalty' ? -amount : amount,
-        label: passes ? 'Threshold reached' : 'Threshold not reached',
-        details: `${formatMetricLabel(form.metric)} is ${metricValue}; threshold is ${form.threshold || 'not set'}.`,
+        label: passes
+          ? i18n.t('payments.rules.labels.thresholdReached')
+          : i18n.t('payments.rules.labels.thresholdNotReached'),
+        details: i18n.t('payments.rules.simulationDetails.thresholdDetails', {
+          metric: formatMetricLabel(form.metric),
+          value: metricValue,
+          threshold:
+            form.threshold ||
+            i18n.t('payments.rules.simulationDetails.thresholdNotSet'),
+        }),
         isPositive: passes && form.ruleType === 'bonus',
       }
     }
     case 'minimum_guarantee':
       return {
         amount: value,
-        label: 'Guaranteed floor',
-        details: `If calculated payout is below ${formatMoney(value)}, the engine tops it up for the ${form.period} period.`,
+        label: i18n.t('payments.rules.labels.guaranteedFloor'),
+        details: i18n.t('payments.rules.simulationDetails.guaranteeDetails', {
+          value: formatMoney(value),
+          period: i18n.t(`payments.rules.periods.${form.period}`),
+        }),
         isPositive: true,
       }
   }
@@ -969,12 +1003,14 @@ function getSampleMetricValue(metric: string): number {
 }
 
 function formatMetricLabel(metric: string): string {
-  return METRIC_OPTIONS.find((option) => option.value === metric)?.label ?? metric
+  return i18n.t(`payments.rules.metrics.${metricToCamelCaseKey(metric)}`, {
+    defaultValue: metric,
+  })
 }
 
 function formatConditions(conditions: Record<string, unknown> | null): string {
   if (conditions === null || Object.keys(conditions).length === 0) {
-    return 'No condition fields'
+    return i18n.t('payments.rules.noConditionFields')
   }
 
   return Object.entries(conditions)
@@ -983,7 +1019,7 @@ function formatConditions(conditions: Record<string, unknown> | null): string {
 }
 
 function formatMoney(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
     maximumFractionDigits: 0,

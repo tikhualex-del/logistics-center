@@ -53,7 +53,10 @@
     "selectDate": "Выбрать дату",
     "searchPlaceholder": "Поиск заказов, курьеров...",
     "allStatuses": "Все статусы",
-    "allSlots": "Все слоты",
+    "timeFilter": "Фильтр времени",
+    "timeFilterFrom": "С",
+    "timeFilterTo": "До",
+    "clearTimeFilter": "Очистить",
     "routes": "Маршруты",
     "couriers": "Курьеры",
     "markAlertsRead": "Отметить оповещения прочитанными",
@@ -103,12 +106,6 @@
     "returned": "Возврат",
     "cancelled": "Отменён"
   },
-  "orderSlots": {
-    "morning": "Утро",
-    "day": "День",
-    "evening": "Вечер",
-    "none": "Без слота"
-  },
   "orders": {
     "assigned": "Назначен",
     "unassigned": "Не назначен",
@@ -119,6 +116,21 @@
     "tryClearFilters": "Попробуйте сбросить фильтры.",
     "from": "с {{time}}",
     "until": "до {{time}}"
+  },
+  "aiDispatcher": {
+    "open": "AI диспетчер",
+    "title": "AI диспетчер",
+    "description": "Опишите, что нужно сделать",
+    "placeholder": "Напишите команду...",
+    "send": "Отправить команду",
+    "popularCommands": "Популярные команды",
+    "quickBuildRoutes": "Построить 3 маршрута",
+    "quickNewOnly": "Только новые заказы",
+    "quickUrgent": "Показать срочные",
+    "quickAssignCouriers": "Распределить по курьерам",
+    "quickHideUnsuitable": "Скрыть неподходящие точки",
+    "selectedOrders": "{{count}} заказа выбрано",
+    "clearSelection": "Очистить"
   },
   "routes": {
     "unavailable": "Маршруты недоступны",
@@ -168,10 +180,17 @@
       "noCourierYet": " маршруту ещё не назначен курьер.",
       "removeFromRoute": "Удалить {{id}} из маршрута",
       "remove": "Удалить",
-      "updateFailed": "Не удалось обновить маршрут."
+      "updateFailed": "Не удалось обновить маршрут.",
+      "deleteRoute": "Удалить маршрут",
+      "deletingRoute": "Удаление маршрута...",
+      "deleteRouteConfirm": "Удалить маршрут? Заказы останутся в системе и снова будут доступны для маршрутов.",
+      "deleteFailed": "Не удалось удалить маршрут."
     }
   },
   "couriers": {
+    "section": "Операции",
+    "pageTitle": "Курьеры",
+    "selectedDate": "Выбранная дата:",
     "status": {
       "available": "Доступен",
       "busy": "Занят",
@@ -181,11 +200,14 @@
       "online": "В сети"
     },
     "loadError": "Не удалось загрузить курьеров.",
+    "loadErrorHint": "Страница подключена к API курьеров. Повторите попытку, когда backend будет доступен.",
     "retry": "Повторить загрузку курьеров",
     "ordersUpdating": "Обновление количества заказов",
     "ordersRetry": "Повторить загрузку заказов",
     "rosterTitle": "Список курьеров",
     "rosterSubtitle": "Статус, загрузка и последняя известная GPS-позиция на выбранную дату.",
+    "visibleOfTotal": "{{visible}} из {{total}}",
+    "disabled": "Отключён",
     "columns": {
       "courier": "Курьер",
       "status": "Статус",
@@ -199,25 +221,43 @@
       "busy": "Занято на маршруте",
       "withGps": "С GPS"
     },
+    "selectCourier": "Выбрать курьера {{name}}",
     "detail": {
       "title": "Карточка курьера",
+      "missing": "Выбранный курьер больше недоступен в этом списке.",
+      "close": "Закрыть карточку курьера",
+      "refresh": "Обновить карточку курьера",
       "assigned": "Назначено",
       "completed": "Завершено",
       "active": "Активные",
       "profile": "Профиль",
+      "profileActive": "Активен",
+      "profileDisabled": "Отключён",
       "gpsPosition": "GPS-позиция",
       "lastSeen": "Последняя активность",
       "phone": "Телефон",
-      "ordersToday": "Заказов сегодня"
+      "noPhone": "Телефон не указан",
+      "ordersToday": "Заказов сегодня",
+      "retryOrders": "Повторить",
+      "ordersLoadError": "Не удалось загрузить статистику заказов.",
+      "noOrders": "Нет назначенных заказов на выбранную дату.",
+      "moreOrders": "+{{count}} ещё"
     },
     "actions": {
       "setOnline": "Перевести в сеть",
       "setOffline": "Перевести в офлайн",
-      "updating": "Обновление статуса"
+      "updating": "Обновление статуса",
+      "toggleUnavailable": "Переключение статуса недоступно для отключённых, неактивных или отстранённых курьеров."
     },
     "noGps": "GPS-позиция отсутствует",
+    "noGpsTitle": "Курьер ещё не отправлял GPS-координаты.",
+    "gpsTitle": "Широта {{lat}}, долгота {{lng}}",
+    "unknownLastSeen": "Неизвестно",
+    "orderFallback": "Заказ {{id}}",
     "emptyFilters": "Нет курьеров, соответствующих фильтрам.",
-    "emptyRoster": "Курьеры появятся здесь, когда их добавят в систему."
+    "emptyFiltersHint": "Попробуйте другое имя, email, телефон или статус.",
+    "emptyRoster": "Курьеров пока нет.",
+    "emptyRosterHint": "Созданные курьеры появятся здесь со статусом, загрузкой и GPS-данными."
   },
   "payments": {
     "status": {
@@ -232,29 +272,43 @@
       "subtitle": "Список выплат и детализация",
       "refresh": "Обновить выплаты",
       "resetFilters": "Сбросить фильтры",
+      "allStatuses": "Все статусы",
+      "allCouriers": "Все курьеры",
       "filters": {
         "status": "Статус",
         "courier": "Курьер",
-        "periodFrom": "Период с",
-        "periodTo": "Период по"
+        "periodFrom": "Период начинается с",
+        "periodTo": "Период заканчивается до"
+      },
+      "columns": {
+        "courier": "Курьер",
+        "period": "Период",
+        "amount": "Сумма",
+        "status": "Статус",
+        "breakdown": "Расчёт"
       },
       "loadError": "Не удалось загрузить выплаты.",
+      "loadErrorRetry": "Повторить",
       "empty": "Нет выплат, соответствующих фильтрам.",
-      "emptyHint": "Рассчитанные выплаты появятся здесь после запуска начислений."
+      "emptyHint": "Рассчитанные выплаты появятся здесь со статусами и детализацией расчёта."
     },
     "detail": {
       "title": "Детали выплаты",
+      "selectPayment": "Выберите выплату",
+      "selectPaymentHint": "Нажмите на строку, чтобы посмотреть детализацию и одобрить или оспорить подходящие выплаты.",
+      "close": "Закрыть детали выплаты",
       "refreshing": "Обновление деталей выплаты...",
       "amount": "Сумма",
       "status": "Статус",
       "period": "Период",
       "rules": "Правила",
       "breakdown": "Детализация",
+      "breakdownEmpty": "В этой выплате нет покомпонентной детализации.",
       "transitionReason": "Причина перехода",
       "transitionHint": "Опциональная финансовая заметка для одобрения или оспаривания.",
       "approve": "Одобрить",
       "dispute": "Оспорить",
-      "hiddenActions": "Действия одобрения скрыты серверными правами.",
+      "hiddenActions": "Действия одобрения скрыты серверными правами и недоступны для текущей роли.",
       "unknownCourier": "Неизвестный курьер",
       "unknown": "Неизвестно",
       "summary": "{{orders}} заказов · {{distance}} км · {{rules}} правил",
@@ -345,7 +399,62 @@
         "daily": "Ежедневно",
         "weekly": "Еженедельно",
         "monthly": "Ежемесячно"
-      }
+      },
+      "statusPill": {
+        "active": "Активные",
+        "inactive": "Неактивные"
+      },
+      "valueSuffix": {
+        "rub": "₽",
+        "rubPerKm": "₽/км",
+        "rubPerOrder": "₽/заказ"
+      },
+      "actionDescriptions": {
+        "zone_rate": "Фиксированная выплата при выполнении маршрута в зоне.",
+        "per_km": "Умножает пробег завершённого маршрута на заданную ставку.",
+        "per_order": "Добавляет фиксированную сумму за каждый доставленный заказ.",
+        "bonus": "Добавляет бонус, когда метрика достигает порога.",
+        "penalty": "Удерживает штраф, когда метрика достигает порога.",
+        "minimum_guarantee": "Подтягивает итоговую выплату до гарантированного минимума."
+      },
+      "actionTitles": {
+        "zone_rate": "Оплатить базу зоны",
+        "per_km": "Оплатить за км",
+        "per_order": "Оплатить за заказ",
+        "bonus": "Добавить бонус",
+        "penalty": "Применить штраф",
+        "minimum_guarantee": "Подтянуть минимум"
+      },
+      "valueLabels": {
+        "zone_rate": "Сумма по зоне",
+        "per_km": "Ставка за км",
+        "per_order": "Сумма за заказ",
+        "bonus": "Сумма бонуса",
+        "penalty": "Сумма штрафа",
+        "minimum_guarantee": "Сумма гарантии"
+      },
+      "valueSuffixes": {
+        "zone_rate": "₽",
+        "per_km": "₽/км",
+        "per_order": "₽/заказ",
+        "bonus": "₽",
+        "penalty": "₽",
+        "minimum_guarantee": "₽"
+      },
+      "simulationDetails": {
+        "zoneMatchSelected": "Пример маршрута проходит через {{zone}}.",
+        "zoneMatchDefault": "Пример маршрута проходит через выбранную зону.",
+        "zoneMatchEmpty": "Выберите зону для симуляции правила.",
+        "distancePayout": "{{distance}} км × {{rate}} за км.",
+        "deliveredPayout": "{{orders}} доставленных заказов × {{rate}}.",
+        "thresholdDetails": "{{metric}}: {{value}}; порог: {{threshold}}.",
+        "thresholdNotSet": "не задан",
+        "guaranteeDetails": "Если рассчитанная выплата ниже {{value}}, движок подтягивает её до гарантии за период {{period}}."
+      },
+      "simulationHintDefault": "Нажмите «Симулировать», чтобы увидеть, как черновик правила работает на примере метрик маршрута.",
+      "conditionsLabel": "Условия:",
+      "versionShort": "v{{version}}",
+      "conditionsEveryRoute": "Применяется к каждому завершённому маршруту в выбранном периоде расчёта."
     }
   },
   "settings": {

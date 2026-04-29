@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent, ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
   Edit3,
@@ -20,25 +21,10 @@ import { Label } from '@/components/ui/label'
 import { useCreateUser, usePermissions, useUpdateUser, useUsers } from '@/hooks'
 import type { UserRole } from '@/store'
 import { cn } from '@/lib/utils'
+import i18n from '@/i18n'
 import { CompanySettings } from './company-settings'
 
-const ROLE_OPTIONS: Array<{ value: UserRole; label: string; help: string }> = [
-  {
-    value: 'admin',
-    label: 'Admin',
-    help: 'Full company settings, users and finance access.',
-  },
-  {
-    value: 'dispatcher',
-    label: 'Dispatcher',
-    help: 'Orders, routes, courier operations and dispatch board.',
-  },
-  {
-    value: 'courier',
-    label: 'Courier',
-    help: 'Own orders and earnings access.',
-  },
-]
+const ROLE_VALUES: UserRole[] = ['admin', 'dispatcher', 'courier']
 
 const ROLE_STYLES: Record<UserRole, string> = {
   admin: 'bg-violet-500/10 text-violet-700 ring-violet-500/20',
@@ -69,6 +55,7 @@ const DEFAULT_FORM: UserFormState = {
 }
 
 export function UserManagement(): ReactElement {
+  const { t } = useTranslation()
   const [form, setForm] = useState<UserFormState>(DEFAULT_FORM)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('')
@@ -142,19 +129,19 @@ export function UserManagement(): ReactElement {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Administration
+              {t('settings.section')}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              User management
+              {t('settings.users.title')}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <StatusPill label="Total" value={stats.total} />
-            <StatusPill label="Active" value={stats.active} />
-            <StatusPill label="Admins" value={stats.admins} />
+            <StatusPill label={t('settings.users.stats.total')} value={stats.total} />
+            <StatusPill label={t('settings.users.stats.active')} value={stats.active} />
+            <StatusPill label={t('settings.users.stats.admins')} value={stats.admins} />
             <Button type="button" variant="outline" size="sm" onClick={resetForm}>
               <Plus />
-              New user
+              {t('settings.users.newUser')}
             </Button>
           </div>
         </div>
@@ -169,17 +156,17 @@ export function UserManagement(): ReactElement {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-foreground">
-                    Company users
+                    {t('settings.users.list')}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Role, contact information and account activity for this tenant.
+                    {t('settings.users.listSubtitle')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => void usersQuery.refetch()}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent"
-                  aria-label="Refresh users"
+                  aria-label={t('settings.users.refresh')}
                 >
                   <RefreshCw
                     className={cn(
@@ -196,7 +183,7 @@ export function UserManagement(): ReactElement {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search by name, email or phone"
+                    placeholder={t('settings.users.searchPlaceholder')}
                     className="pl-9"
                   />
                 </div>
@@ -205,10 +192,10 @@ export function UserManagement(): ReactElement {
                   onChange={(event) => setRoleFilter(event.target.value as UserRole | '')}
                   className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="">All roles</option>
-                  {ROLE_OPTIONS.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
+                  <option value="">{t('settings.users.allRoles')}</option>
+                  {ROLE_VALUES.map((role) => (
+                    <option key={role} value={role}>
+                      {t(`settings.users.roles.${role}.label`)}
                     </option>
                   ))}
                 </select>
@@ -219,9 +206,9 @@ export function UserManagement(): ReactElement {
                   }
                   className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="">All states</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="">{t('settings.users.allStates')}</option>
+                  <option value="active">{t('settings.users.statusActive')}</option>
+                  <option value="inactive">{t('settings.users.statusInactive')}</option>
                 </select>
               </div>
             </div>
@@ -269,6 +256,8 @@ function UsersTable({
   onRetry: () => void
   onEdit: (user: User) => void
 }): ReactElement {
+  const { t } = useTranslation()
+
   if (isLoading) {
     return (
       <div className="space-y-3 p-5">
@@ -284,10 +273,10 @@ function UsersTable({
       <div className="flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <UserRound className="h-9 w-9 text-muted-foreground" />
         <p className="mt-3 text-sm font-semibold text-foreground">
-          Users could not be loaded.
+          {t('settings.users.loadError')}
         </p>
         <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-4">
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     )
@@ -298,10 +287,10 @@ function UsersTable({
       <div className="flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <UserRound className="h-9 w-9 text-muted-foreground" />
         <p className="mt-3 text-sm font-semibold text-foreground">
-          No users match the filters.
+          {t('settings.users.emptyFilters')}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Created users will appear here with role and activity state.
+          {t('settings.users.empty')}
         </p>
       </div>
     )
@@ -313,11 +302,11 @@ function UsersTable({
         className="hidden min-w-[900px] grid-cols-[minmax(240px,1.3fr)_150px_140px_minmax(190px,0.9fr)_140px_56px] gap-4 border-b border-border bg-muted/40 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground md:grid"
         role="row"
       >
-        <span>User</span>
-        <span>Role</span>
-        <span>Status</span>
-        <span>Last login</span>
-        <span>Created</span>
+        <span>{t('settings.users.columns.user')}</span>
+        <span>{t('settings.users.columns.role')}</span>
+        <span>{t('settings.users.columns.status')}</span>
+        <span>{t('settings.users.columns.lastLogin')}</span>
+        <span>{t('settings.users.columns.created')}</span>
         <span />
       </div>
       <div className="min-w-0 divide-y divide-border md:min-w-[900px]">
@@ -383,6 +372,7 @@ function UserEditor({
   onReset: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }): ReactElement {
+  const { t } = useTranslation()
   const isEditing = form.id !== null
 
   return (
@@ -394,15 +384,17 @@ function UserEditor({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
-              {isEditing ? 'Edit user' : 'Create user'}
+              {isEditing
+                ? t('settings.users.form.editUser')
+                : t('settings.users.form.createUser')}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage profile, role and activation state.
+              {t('settings.users.form.manageHint')}
             </p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={onReset}>
             <Plus />
-            New
+            {t('settings.integrations.new')}
           </Button>
         </div>
       </div>
@@ -410,11 +402,11 @@ function UserEditor({
       <div className="space-y-4 p-5">
         {!canManageUsers && (
           <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-700">
-            Your current role cannot manage users.
+            {t('settings.users.form.cannotManage')}
           </p>
         )}
 
-        <FormField label="Email" htmlFor="user-email" icon={<Mail />}>
+        <FormField label={t('settings.users.form.email')} htmlFor="user-email" icon={<Mail />}>
           <Input
             id="user-email"
             type="email"
@@ -426,7 +418,11 @@ function UserEditor({
         </FormField>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label="First name" htmlFor="first-name" icon={<UserRound />}>
+          <FormField
+            label={t('settings.users.form.firstName')}
+            htmlFor="first-name"
+            icon={<UserRound />}
+          >
             <Input
               id="first-name"
               value={form.firstName}
@@ -435,7 +431,11 @@ function UserEditor({
               disabled={!canManageUsers}
             />
           </FormField>
-          <FormField label="Last name" htmlFor="last-name" icon={<UserRound />}>
+          <FormField
+            label={t('settings.users.form.lastName')}
+            htmlFor="last-name"
+            icon={<UserRound />}
+          >
             <Input
               id="last-name"
               value={form.lastName}
@@ -445,7 +445,7 @@ function UserEditor({
           </FormField>
         </div>
 
-        <FormField label="Phone" htmlFor="user-phone" icon={<Phone />}>
+        <FormField label={t('settings.users.form.phone')} htmlFor="user-phone" icon={<Phone />}>
           <Input
             id="user-phone"
             value={form.phone}
@@ -456,7 +456,11 @@ function UserEditor({
         </FormField>
 
         <FormField
-          label={isEditing ? 'New password' : 'Password'}
+          label={
+            isEditing
+              ? t('settings.users.form.newPassword')
+              : t('settings.users.form.password')
+          }
           htmlFor="user-password"
           icon={<KeyRound />}
         >
@@ -469,11 +473,11 @@ function UserEditor({
             maxLength={72}
             required={!isEditing}
             disabled={!canManageUsers}
-            placeholder={isEditing ? 'Leave empty to keep current password' : ''}
+            placeholder={isEditing ? t('settings.users.form.keepPassword') : ''}
           />
         </FormField>
 
-        <FormField label="Role" htmlFor="user-role" icon={<Shield />}>
+        <FormField label={t('settings.users.form.role')} htmlFor="user-role" icon={<Shield />}>
           <select
             id="user-role"
             value={form.role}
@@ -481,16 +485,18 @@ function UserEditor({
             disabled={!canManageUsers}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {ROLE_OPTIONS.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
+            {ROLE_VALUES.map((role) => (
+              <option key={role} value={role}>
+                {t(`settings.users.roles.${role}.label`)}
               </option>
             ))}
           </select>
         </FormField>
 
         <label className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
-          <span className="text-sm font-medium text-foreground">Active user</span>
+          <span className="text-sm font-medium text-foreground">
+            {t('settings.users.form.activeUser')}
+          </span>
           <input
             type="checkbox"
             checked={form.isActive}
@@ -508,7 +514,11 @@ function UserEditor({
 
         <Button type="submit" disabled={!canManageUsers || isSaving} className="w-full">
           {isEditing ? <Edit3 /> : <Plus />}
-          {isSaving ? 'Saving' : isEditing ? 'Save changes' : 'Create user'}
+          {isSaving
+            ? t('common.saving')
+            : isEditing
+              ? t('settings.users.form.saveChanges')
+              : t('settings.users.form.createUser')}
         </Button>
       </div>
     </form>
@@ -516,14 +526,20 @@ function UserEditor({
 }
 
 function RoleGuide(): ReactElement {
+  const { t } = useTranslation()
+
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-foreground">Role guide</h2>
+      <h2 className="text-sm font-semibold text-foreground">
+        {t('settings.users.roleGuide')}
+      </h2>
       <div className="mt-4 space-y-3">
-        {ROLE_OPTIONS.map((role) => (
-          <div key={role.value} className="rounded-lg border border-border bg-background p-3">
-            <RoleBadge role={role.value} />
-            <p className="mt-2 text-sm text-muted-foreground">{role.help}</p>
+        {ROLE_VALUES.map((role) => (
+          <div key={role} className="rounded-lg border border-border bg-background p-3">
+            <RoleBadge role={role} />
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t(`settings.users.roles.${role}.description`)}
+            </p>
           </div>
         ))}
       </div>
@@ -556,7 +572,7 @@ function FormField({
 }
 
 function RoleBadge({ role }: { role: UserRole }): ReactElement {
-  const label = ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role
+  const { t } = useTranslation()
 
   return (
     <span
@@ -565,12 +581,14 @@ function RoleBadge({ role }: { role: UserRole }): ReactElement {
         ROLE_STYLES[role],
       )}
     >
-      {label}
+      {t(`settings.users.roles.${role}.label`)}
     </span>
   )
 }
 
 function ActivityBadge({ isActive }: { isActive: boolean }): ReactElement {
+  const { t } = useTranslation()
+
   return (
     <span
       className={cn(
@@ -581,7 +599,7 @@ function ActivityBadge({ isActive }: { isActive: boolean }): ReactElement {
       )}
     >
       {isActive ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-      {isActive ? 'Active' : 'Inactive'}
+      {isActive ? t('settings.users.statusActive') : t('settings.users.statusInactive')}
     </span>
   )
 }
@@ -671,9 +689,9 @@ function getInitials(user: User): string {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown'
+  if (Number.isNaN(date.getTime())) return i18n.t('common.unknown')
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -681,12 +699,12 @@ function formatDate(value: string): string {
 }
 
 function formatDateTime(value: string | null): string {
-  if (!value) return 'Never'
+  if (!value) return i18n.t('common.never')
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown'
+  if (Number.isNaN(date.getTime())) return i18n.t('common.unknown')
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
