@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, PaymentRuleType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -63,7 +63,11 @@ export class PaymentRulesService {
           name: dto.name,
           rule_type: dto.ruleType,
           version: 1,
-          config: buildPaymentRuleConfig(dto.ruleType, dto.value, dto.conditions),
+          config: buildPaymentRuleConfig(
+            dto.ruleType,
+            dto.value,
+            dto.conditions,
+          ),
           changed_by_user_id: changedByUserId,
           change_reason: dto.changeReason ?? null,
           is_active: dto.isActive ?? true,
@@ -119,7 +123,9 @@ export class PaymentRulesService {
         select: paymentRuleSelect,
       });
 
-      const currentRules = query.includeHistory ? rules : latestRulesOnly(rules);
+      const currentRules = query.includeHistory
+        ? rules
+        : latestRulesOnly(rules);
       const now = new Date();
       const filteredRules = query.includeInactive
         ? currentRules
@@ -175,7 +181,9 @@ export class PaymentRulesService {
       const nextRuleType = dto.ruleType ?? currentRule.rule_type;
       const nextValue = dto.value ?? currentConfig.value;
       const nextConditions =
-        dto.conditions !== undefined ? dto.conditions : currentConfig.conditions;
+        dto.conditions !== undefined
+          ? dto.conditions
+          : currentConfig.conditions;
 
       const nextRule = await this.prisma.paymentRuleVersion.create({
         data: {
@@ -184,7 +192,11 @@ export class PaymentRulesService {
           name: dto.name ?? currentRule.name,
           rule_type: nextRuleType,
           version: currentRule.version + 1,
-          config: buildPaymentRuleConfig(nextRuleType, nextValue, nextConditions),
+          config: buildPaymentRuleConfig(
+            nextRuleType,
+            nextValue,
+            nextConditions,
+          ),
           changed_by_user_id: changedByUserId,
           change_reason:
             dto.changeReason !== undefined

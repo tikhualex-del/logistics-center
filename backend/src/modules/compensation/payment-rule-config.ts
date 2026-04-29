@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma, PaymentRuleType } from '@prisma/client';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 
 export interface PaymentRuleConfigPayload {
   value: number;
@@ -77,7 +78,9 @@ function validatePaymentRuleConfig(
   conditions: Record<string, unknown> | null,
 ): void {
   if (!Number.isFinite(value) || value < 0) {
-    throw new BadRequestException('Payment rule value must be a non-negative number');
+    throw new BadRequestException(
+      'Payment rule value must be a non-negative number',
+    );
   }
 
   switch (ruleType) {
@@ -114,7 +117,7 @@ function validatePaymentRuleConfig(
       break;
     }
     default:
-      throw new BadRequestException(`Unsupported payment rule type "${ruleType}"`);
+      throw new BadRequestException('Unsupported payment rule type');
   }
 }
 
@@ -159,7 +162,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -176,5 +181,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

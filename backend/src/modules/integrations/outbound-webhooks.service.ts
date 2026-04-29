@@ -1,10 +1,15 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Prisma, IntegrationDirection, IntegrationEventStatus } from '@prisma/client';
+import {
+  Prisma,
+  IntegrationDirection,
+  IntegrationEventStatus,
+} from '@prisma/client';
 import type { Queue } from 'bull';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { OrderStatusChangedEvent } from '../orders/orders.events';
 import type {
@@ -17,7 +22,10 @@ import {
   WEBHOOK_DELIVERY_JOB,
   WEBHOOK_DELIVERY_QUEUE,
 } from './integrations.constants';
-import type { OutboundWebhookEnvelope, OutboundWebhookJobData } from './outbound-webhooks.types';
+import type {
+  OutboundWebhookEnvelope,
+  OutboundWebhookJobData,
+} from './outbound-webhooks.types';
 
 const activeOutboundIntegrationSelect = {
   id: true,
@@ -44,7 +52,9 @@ export class OutboundWebhooksService {
   }
 
   @OnEvent(DOMAIN_EVENTS.ORDER.STATUS_CHANGED)
-  async handleOrderStatusChanged(event: OrderStatusChangedEvent): Promise<void> {
+  async handleOrderStatusChanged(
+    event: OrderStatusChangedEvent,
+  ): Promise<void> {
     if (!event.order.externalId) {
       this.logger.debug(
         {
@@ -171,7 +181,8 @@ export class OutboundWebhooksService {
           return null;
         }
 
-        const { orderId: _internalOrderId, ...rest } = entry;
+        const rest: Record<string, unknown> = { ...entry };
+        delete rest['orderId'];
 
         return {
           externalOrderId,
@@ -217,30 +228,34 @@ export class OutboundWebhooksService {
     entityId: string,
     payload: OutboundWebhookEnvelope,
   ): Promise<void> {
-    const integrations = await this.findActiveOutboundIntegrations(companyId, eventType);
+    const integrations = await this.findActiveOutboundIntegrations(
+      companyId,
+      eventType,
+    );
 
     if (integrations.length === 0) {
       return;
     }
 
     for (const integration of integrations) {
-      const integrationEvent = await this.prisma.runWithoutTenant(async () =>
-        await this.prisma.integrationEvent.create({
-          data: {
-            company_id: companyId,
-            integration_id: integration.id,
-            direction: IntegrationDirection.outbound,
-            event_type: eventType,
-            entity_type: entityType,
-            entity_id: entityId,
-            status: IntegrationEventStatus.pending,
-            attempts: 0,
-            payload: toInputJsonValue(payload),
-          },
-          select: {
-            id: true,
-          },
-        }),
+      const integrationEvent = await this.prisma.runWithoutTenant(
+        async () =>
+          await this.prisma.integrationEvent.create({
+            data: {
+              company_id: companyId,
+              integration_id: integration.id,
+              direction: IntegrationDirection.outbound,
+              event_type: eventType,
+              entity_type: entityType,
+              entity_id: entityId,
+              status: IntegrationEventStatus.pending,
+              attempts: 0,
+              payload: toInputJsonValue(payload),
+            },
+            select: {
+              id: true,
+            },
+          }),
       );
 
       try {
@@ -262,7 +277,10 @@ export class OutboundWebhooksService {
               status: IntegrationEventStatus.failed,
               processed_at: new Date(),
               response: toInputJsonValue({
-                error: error instanceof Error ? error.message : 'Queue enqueue failed',
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : 'Queue enqueue failed',
               }),
             },
           });
@@ -286,21 +304,22 @@ export class OutboundWebhooksService {
     companyId: string,
     eventType: string,
   ): Promise<ActiveOutboundIntegrationRecord[]> {
-    const integrations = await this.prisma.runWithoutTenant(async () =>
-      await this.prisma.integration.findMany({
-        where: {
-          company_id: companyId,
-          is_active: true,
-          outbound_webhook_url: {
-            not: null,
+    const integrations = await this.prisma.runWithoutTenant(
+      async () =>
+        await this.prisma.integration.findMany({
+          where: {
+            company_id: companyId,
+            is_active: true,
+            outbound_webhook_url: {
+              not: null,
+            },
+            webhook_secret: {
+              not: null,
+            },
           },
-          webhook_secret: {
-            not: null,
-          },
-        },
-        orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
-        select: activeOutboundIntegrationSelect,
-      }),
+          orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
+          select: activeOutboundIntegrationSelect,
+        }),
     );
 
     return integrations.filter((integration) =>
@@ -318,13 +337,14 @@ export class OutboundWebhooksService {
       return new Map();
     }
 
-    const rows = await this.prisma.runWithoutTenant(async () =>
-      await this.prisma.$queryRaw<
-        Array<{
-          internal_id: string;
-          external_id: string;
-        }>
-      >(Prisma.sql`
+    const rows = await this.prisma.runWithoutTenant(
+      async () =>
+        await this.prisma.$queryRaw<
+          Array<{
+            internal_id: string;
+            external_id: string;
+          }>
+        >(Prisma.sql`
         SELECT "internal_id", "external_id"
         FROM "external_id_map"
         WHERE "company_id" = ${companyId}
@@ -377,7 +397,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -394,5 +416,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

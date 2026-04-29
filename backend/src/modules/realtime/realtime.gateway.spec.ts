@@ -77,19 +77,13 @@ describe('RealtimeGateway', () => {
       to,
     } as never;
 
-    gateway.emitToCompany('company-1', 'order:status_changed', { orderId: '1' });
-    gateway.emitToRole(
-      'company-1',
-      UserRole.dispatcher,
-      'route:updated',
-      { routeId: '1' },
-    );
-    gateway.emitToUser(
-      'company-1',
-      'user-1',
-      'alert:new',
-      { alertId: '1' },
-    );
+    gateway.emitToCompany('company-1', 'order:status_changed', {
+      orderId: '1',
+    });
+    gateway.emitToRole('company-1', UserRole.dispatcher, 'route:updated', {
+      routeId: '1',
+    });
+    gateway.emitToUser('company-1', 'user-1', 'alert:new', { alertId: '1' });
 
     expect(to).toHaveBeenNthCalledWith(1, getCompanyRoom('company-1'));
     expect(to).toHaveBeenNthCalledWith(

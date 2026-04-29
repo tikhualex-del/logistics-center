@@ -18,12 +18,6 @@ import {
 } from './notifications.constants';
 import type { WebNotificationEnvelope } from './notifications.types';
 
-type SocketWithUser = Socket & {
-  data: {
-    user?: AuthenticatedUser;
-  };
-};
-
 @Injectable()
 @WebSocketGateway({
   namespace: NOTIFICATIONS_NAMESPACE,
@@ -50,8 +44,7 @@ export class NotificationsGateway implements OnGatewayConnection {
         UserRole.dispatcher,
       ]);
 
-      const socket = client as SocketWithUser;
-      socket.data.user = user;
+      setSocketUser(client, user);
 
       await client.join(getCompanyNotificationsRoom(user.companyId));
       await client.join(
@@ -109,4 +102,9 @@ export class NotificationsGateway implements OnGatewayConnection {
     );
     client.disconnect(true);
   }
+}
+
+function setSocketUser(client: Socket, user: AuthenticatedUser): void {
+  const socketData = client.data as { user?: AuthenticatedUser };
+  socketData.user = user;
 }

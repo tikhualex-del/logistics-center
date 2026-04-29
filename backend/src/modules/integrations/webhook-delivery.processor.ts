@@ -1,13 +1,11 @@
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createHmac } from 'node:crypto';
-import {
-  IntegrationEventStatus,
-  Prisma,
-} from '@prisma/client';
+import { IntegrationEventStatus, Prisma } from '@prisma/client';
 import type { Job, Queue } from 'bull';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   WEBHOOK_DELIVERY_JOB,
@@ -58,13 +56,14 @@ export class WebhookDeliveryProcessor {
 
   @Process(WEBHOOK_DELIVERY_JOB)
   async process(job: Job<OutboundWebhookJobData>): Promise<void> {
-    const integrationEvent = await this.prisma.runWithoutTenant(async () =>
-      await this.prisma.integrationEvent.findFirst({
-        where: {
-          id: job.data.integrationEventId,
-        },
-        select: deliveryEventSelect,
-      }),
+    const integrationEvent = await this.prisma.runWithoutTenant(
+      async () =>
+        await this.prisma.integrationEvent.findFirst({
+          where: {
+            id: job.data.integrationEventId,
+          },
+          select: deliveryEventSelect,
+        }),
     );
 
     if (!integrationEvent) {
@@ -154,7 +153,8 @@ export class WebhookDeliveryProcessor {
       });
     } catch (error) {
       await this.handleDeliveryFailure(integrationEvent, nextAttempt, {
-        error: error instanceof Error ? error.message : 'Webhook request failed',
+        error:
+          error instanceof Error ? error.message : 'Webhook request failed',
       });
     }
   }
@@ -211,7 +211,7 @@ export class WebhookDeliveryProcessor {
       attempts,
       typeof response['error'] === 'string'
         ? response['error']
-        : `HTTP ${String(response['statusCode'] ?? 'unknown')}`,
+        : `HTTP ${stringifyUnknown(response['statusCode'] ?? 'unknown')}`,
       response,
     );
   }
@@ -344,7 +344,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -361,5 +363,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

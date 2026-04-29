@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
-import type { OrderCreatedEvent, OrderStatusChangedEvent } from '../orders/orders.events';
+import type {
+  OrderCreatedEvent,
+  OrderStatusChangedEvent,
+} from '../orders/orders.events';
 import type {
   RouteBuiltEvent,
   RouteCancelledEvent,
@@ -27,23 +30,20 @@ export class NotificationsService {
 
   @OnEvent(DOMAIN_EVENTS.ORDER.CREATED)
   handleOrderCreated(event: OrderCreatedEvent): void {
-    this.dispatch(
-      event.companyId,
-      buildOrderCreatedNotification(event),
-    );
+    this.dispatch(event.companyId, buildOrderCreatedNotification(event));
   }
 
   @OnEvent(DOMAIN_EVENTS.ORDER.STATUS_CHANGED)
   handleOrderStatusChanged(event: OrderStatusChangedEvent): void {
-    this.dispatch(
-      event.companyId,
-      buildOrderStatusChangedNotification(event),
-    );
+    this.dispatch(event.companyId, buildOrderStatusChangedNotification(event));
   }
 
   @OnEvent(DOMAIN_EVENTS.ROUTE.BUILT)
   handleRouteBuilt(event: RouteBuiltEvent): void {
-    this.dispatch(event.companyId, buildRouteChangedNotification('built', event));
+    this.dispatch(
+      event.companyId,
+      buildRouteChangedNotification('built', event),
+    );
   }
 
   @OnEvent(DOMAIN_EVENTS.ROUTE.UPDATED)

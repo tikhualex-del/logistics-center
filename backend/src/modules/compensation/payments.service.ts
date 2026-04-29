@@ -16,6 +16,7 @@ import {
 import type { Job, Queue } from 'bull';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { getTenantContextRequestId } from '../../prisma/tenant-context.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -553,9 +554,14 @@ export class PaymentsService {
     }
   }
 
-  private async emitPaymentApproved(payload: PaymentApprovedEvent): Promise<void> {
+  private async emitPaymentApproved(
+    payload: PaymentApprovedEvent,
+  ): Promise<void> {
     try {
-      await this.eventEmitter.emitAsync(DOMAIN_EVENTS.PAYMENT.APPROVED, payload);
+      await this.eventEmitter.emitAsync(
+        DOMAIN_EVENTS.PAYMENT.APPROVED,
+        payload,
+      );
     } catch (error) {
       this.logger.warn(
         {
@@ -752,7 +758,9 @@ function buildPaymentBreakdown(
     runningSubtotal = roundMoney(runningSubtotal + component.amount);
 
     if (rule.rule_type === PaymentRuleType.minimum_guarantee) {
-      minimumGuaranteeTopUp = roundMoney(minimumGuaranteeTopUp + component.amount);
+      minimumGuaranteeTopUp = roundMoney(
+        minimumGuaranteeTopUp + component.amount,
+      );
     } else {
       subtotalBeforeGuarantee = runningSubtotal;
     }
@@ -802,7 +810,9 @@ function buildPaymentBreakdown(
       deliveryAddress: order.deliveryAddress,
     })),
     components,
-    appliedRuleVersionIds: appliedComponents.map((component) => component.ruleId),
+    appliedRuleVersionIds: appliedComponents.map(
+      (component) => component.ruleId,
+    ),
   };
 }
 
@@ -836,9 +846,7 @@ function buildRuleComponent(
         runningSubtotal,
       );
     default:
-      throw new BadRequestException(
-        `Unsupported payment rule type "${rule.rule_type}"`,
-      );
+      throw new BadRequestException('Unsupported payment rule type');
   }
 }
 
@@ -947,9 +955,7 @@ function buildBonusComponent(
     name: rule.name,
     applied,
     amount: applied ? roundMoney(value) : 0,
-    reason: applied
-      ? 'Bonus threshold reached'
-      : 'Bonus threshold not reached',
+    reason: applied ? 'Bonus threshold reached' : 'Bonus threshold not reached',
     details: {
       metric,
       metricValue,
@@ -1063,10 +1069,8 @@ function matchesGuaranteePeriod(
         start.getUTCFullYear() === end.getUTCFullYear() &&
         start.getUTCMonth() === end.getUTCMonth() &&
         start.getUTCDate() === 1 &&
-        end.getUTCDate() === daysInUtcMonth(
-          start.getUTCFullYear(),
-          start.getUTCMonth(),
-        )
+        end.getUTCDate() ===
+          daysInUtcMonth(start.getUTCFullYear(), start.getUTCMonth())
       );
     default:
       return false;
@@ -1120,7 +1124,10 @@ function readGuaranteePeriod(value: unknown): GuaranteePeriod {
   throw new BadRequestException('Unsupported minimum guarantee period');
 }
 
-function readMetricValue(metric: SupportedMetric, metrics: PaymentMetrics): number {
+function readMetricValue(
+  metric: SupportedMetric,
+  metrics: PaymentMetrics,
+): number {
   switch (metric) {
     case 'completed_orders':
       return metrics.deliveredOrdersCount;
@@ -1133,7 +1140,9 @@ function readMetricValue(metric: SupportedMetric, metrics: PaymentMetrics): numb
   }
 }
 
-function readRouteDistanceMeters(optimizationData: Prisma.JsonValue | null): number {
+function readRouteDistanceMeters(
+  optimizationData: Prisma.JsonValue | null,
+): number {
   if (
     typeof optimizationData !== 'object' ||
     optimizationData === null ||
@@ -1205,7 +1214,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -1222,5 +1233,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

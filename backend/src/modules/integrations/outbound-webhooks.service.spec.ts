@@ -1,10 +1,17 @@
 import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { IntegrationDirection, IntegrationEventStatus, OrderStatus } from '@prisma/client';
+import {
+  IntegrationDirection,
+  IntegrationEventStatus,
+  OrderStatus,
+} from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { PrismaService } from '../../prisma/prisma.service';
-import { WEBHOOK_DELIVERY_JOB, WEBHOOK_DELIVERY_QUEUE } from './integrations.constants';
+import {
+  WEBHOOK_DELIVERY_JOB,
+  WEBHOOK_DELIVERY_QUEUE,
+} from './integrations.constants';
 import { OutboundWebhooksService } from './outbound-webhooks.service';
 
 const mockLogger = {
@@ -59,14 +66,17 @@ describe('OutboundWebhooksService', () => {
         id: 'integration-1',
         company_id: 'company-1',
         name: 'crm-main',
-        outbound_webhook_url: 'https://crm.example.com/webhooks/logistics-center',
+        outbound_webhook_url:
+          'https://crm.example.com/webhooks/logistics-center',
         webhook_secret: 'secret',
         settings: {
           eventTypes: ['order.status-changed'],
         },
       },
     ]);
-    mockPrismaService.integrationEvent.create.mockResolvedValue({ id: 'event-1' });
+    mockPrismaService.integrationEvent.create.mockResolvedValue({
+      id: 'event-1',
+    });
     mockQueue.add.mockResolvedValue({});
 
     await service.handleOrderStatusChanged({
@@ -137,7 +147,8 @@ describe('OutboundWebhooksService', () => {
         id: 'integration-1',
         company_id: 'company-1',
         name: 'crm-main',
-        outbound_webhook_url: 'https://crm.example.com/webhooks/logistics-center',
+        outbound_webhook_url:
+          'https://crm.example.com/webhooks/logistics-center',
         webhook_secret: 'secret',
         settings: {
           eventTypes: ['route.updated'],
@@ -147,7 +158,9 @@ describe('OutboundWebhooksService', () => {
     mockPrismaService.$queryRaw.mockResolvedValue([
       { internal_id: 'order-1', external_id: 'crm-order-1' },
     ]);
-    mockPrismaService.integrationEvent.create.mockResolvedValue({ id: 'event-2' });
+    mockPrismaService.integrationEvent.create.mockResolvedValue({
+      id: 'event-2',
+    });
     mockQueue.add.mockResolvedValue({});
 
     await service.handleRouteUpdated({

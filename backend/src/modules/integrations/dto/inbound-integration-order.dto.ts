@@ -11,6 +11,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { stringifyUnknown } from '../../../common/utils/stringify-unknown';
 
 export class InboundIntegrationOrderDto {
   @ApiProperty({ example: 'crm-order-123' })
@@ -106,7 +107,7 @@ export class InboundIntegrationOrderDto {
 
 function normalizeRequiredString(value: unknown): string {
   if (typeof value !== 'string') {
-    return String(value ?? '');
+    return stringifyUnknown(value);
   }
 
   return value.trim();
@@ -143,5 +144,5 @@ function normalizeOptionalDate(value: unknown): Date | undefined {
     return value;
   }
 
-  return new Date(String(value));
+  return new Date(stringifyUnknown(value));
 }

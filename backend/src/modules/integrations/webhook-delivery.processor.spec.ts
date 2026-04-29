@@ -5,7 +5,10 @@ import { IntegrationEventStatus } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { PrismaService } from '../../prisma/prisma.service';
-import { WEBHOOK_DELIVERY_JOB, WEBHOOK_DELIVERY_QUEUE } from './integrations.constants';
+import {
+  WEBHOOK_DELIVERY_JOB,
+  WEBHOOK_DELIVERY_QUEUE,
+} from './integrations.constants';
 import { WebhookDeliveryProcessor } from './webhook-delivery.processor';
 
 const mockLogger = {
@@ -95,7 +98,9 @@ describe('WebhookDeliveryProcessor', () => {
   });
 
   it('delivers webhook successfully and marks integration event succeeded', async () => {
-    mockPrismaService.integrationEvent.findFirst.mockResolvedValue(baseIntegrationEvent);
+    mockPrismaService.integrationEvent.findFirst.mockResolvedValue(
+      baseIntegrationEvent,
+    );
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -145,7 +150,9 @@ describe('WebhookDeliveryProcessor', () => {
   });
 
   it('schedules retry with the first delay when delivery fails', async () => {
-    mockPrismaService.integrationEvent.findFirst.mockResolvedValue(baseIntegrationEvent);
+    mockPrismaService.integrationEvent.findFirst.mockResolvedValue(
+      baseIntegrationEvent,
+    );
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -188,7 +195,9 @@ describe('WebhookDeliveryProcessor', () => {
       ...baseIntegrationEvent,
       attempts: 5,
     });
-    global.fetch = jest.fn().mockRejectedValue(new Error('network timeout')) as typeof global.fetch;
+    global.fetch = jest
+      .fn()
+      .mockRejectedValue(new Error('network timeout')) as typeof global.fetch;
 
     await processor.process({
       data: {

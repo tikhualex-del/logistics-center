@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { OrderCreatedEvent, OrderStatusChangedEvent } from '../orders/orders.events';
+import type {
+  OrderCreatedEvent,
+  OrderStatusChangedEvent,
+} from '../orders/orders.events';
 import type {
   RouteBuiltEvent,
   RouteCancelledEvent,

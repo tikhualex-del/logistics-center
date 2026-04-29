@@ -24,7 +24,8 @@ export class ListPaymentRulesQueryDto {
   name?: string;
 
   @ApiPropertyOptional({
-    description: 'When true, returns all versions instead of only the latest one',
+    description:
+      'When true, returns all versions instead of only the latest one',
     default: false,
   })
   @IsOptional()

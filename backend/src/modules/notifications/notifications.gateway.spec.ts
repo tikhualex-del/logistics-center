@@ -51,9 +51,7 @@ describe('NotificationsGateway', () => {
 
     await gateway.handleConnection(client as never);
 
-    expect(client.join).toHaveBeenCalledWith(
-      'company:company-1:notifications',
-    );
+    expect(client.join).toHaveBeenCalledWith('company:company-1:notifications');
     expect(client.join).toHaveBeenCalledWith(
       getDispatcherNotificationsRoom('company-1'),
     );

@@ -87,9 +87,9 @@ describe('PaymentsController', () => {
   it('returns payment detail in tenant scope', async () => {
     mockPaymentsService.getPayment.mockResolvedValue(paymentResponse);
 
-    await expect(controller.getPayment('company-1', 'payment-1')).resolves.toEqual(
-      paymentResponse,
-    );
+    await expect(
+      controller.getPayment('company-1', 'payment-1'),
+    ).resolves.toEqual(paymentResponse);
     expect(mockPaymentsService.getPayment).toHaveBeenCalledWith(
       'company-1',
       'payment-1',

@@ -17,12 +17,6 @@ import {
   REALTIME_NAMESPACE,
 } from './realtime.constants';
 
-type SocketWithUser = Socket & {
-  data: {
-    user?: AuthenticatedUser;
-  };
-};
-
 @Injectable()
 @WebSocketGateway({
   namespace: REALTIME_NAMESPACE,
@@ -51,8 +45,7 @@ export class RealtimeGateway
         UserRole.dispatcher,
         UserRole.courier,
       ]);
-      const socket = client as SocketWithUser;
-      socket.data.user = user;
+      setSocketUser(client, user);
 
       await client.join(getCompanyRoom(user.companyId));
       await client.join(getCompanyRoleRoom(user.companyId, user.role));
@@ -80,7 +73,7 @@ export class RealtimeGateway
   }
 
   handleDisconnect(client: Socket): void {
-    const user = (client as SocketWithUser).data.user;
+    const user = getSocketUser(client);
 
     this.logger.info(
       {
@@ -92,11 +85,7 @@ export class RealtimeGateway
     );
   }
 
-  emitToCompany(
-    companyId: string,
-    event: string,
-    payload: unknown,
-  ): void {
+  emitToCompany(companyId: string, event: string, payload: unknown): void {
     this.server.to(getCompanyRoom(companyId)).emit(event, payload);
   }
 
@@ -117,4 +106,14 @@ export class RealtimeGateway
   ): void {
     this.server.to(getCompanyUserRoom(companyId, userId)).emit(event, payload);
   }
+}
+
+function setSocketUser(client: Socket, user: AuthenticatedUser): void {
+  const socketData = client.data as { user?: AuthenticatedUser };
+  socketData.user = user;
+}
+
+function getSocketUser(client: Socket): AuthenticatedUser | undefined {
+  const socketData = client.data as { user?: AuthenticatedUser };
+  return socketData.user;
 }

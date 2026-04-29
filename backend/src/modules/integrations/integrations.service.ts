@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
+import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
 import { SUPPORTED_OUTBOUND_WEBHOOK_EVENTS } from './integrations.constants';
@@ -121,7 +122,9 @@ export class IntegrationsService {
     });
   }
 
-  async listWebhooks(companyId: string): Promise<WebhookRegistrationResponseDto[]> {
+  async listWebhooks(
+    companyId: string,
+  ): Promise<WebhookRegistrationResponseDto[]> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const registrations = await this.prisma.integration.findMany({
         orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
@@ -444,7 +447,10 @@ export class IntegrationsService {
     }
 
     try {
-      return await this.ordersService.getOrder(companyId, externalIdMap.internal_id);
+      return await this.ordersService.getOrder(
+        companyId,
+        externalIdMap.internal_id,
+      );
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new ConflictException(
@@ -547,15 +553,17 @@ export class IntegrationsService {
       return null;
     }
 
-    const existingOrder = await this.prisma.runWithTenant(companyId, async () =>
-      await this.prisma.order.findFirst({
-        where: {
-          external_id: externalId,
-        },
-        select: {
-          id: true,
-        },
-      }),
+    const existingOrder = await this.prisma.runWithTenant(
+      companyId,
+      async () =>
+        await this.prisma.order.findFirst({
+          where: {
+            external_id: externalId,
+          },
+          select: {
+            id: true,
+          },
+        }),
     );
 
     if (!existingOrder) {
@@ -756,7 +764,9 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => toInputJsonValue(entry)) as Prisma.InputJsonArray;
+    return value.map((entry) =>
+      toInputJsonValue(entry),
+    ) as Prisma.InputJsonArray;
   }
 
   if (typeof value === 'object') {
@@ -773,5 +783,5 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
     return inputObject as Prisma.InputJsonObject;
   }
 
-  return String(value);
+  return stringifyUnknown(value);
 }

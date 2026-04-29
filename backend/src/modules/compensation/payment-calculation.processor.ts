@@ -2,7 +2,10 @@ import { Process, Processor } from '@nestjs/bull';
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import type { Job } from 'bull';
 import { PinoLogger } from 'nestjs-pino';
-import { PAYMENT_CALCULATION_JOB, PAYMENT_CALCULATION_QUEUE } from './compensation.constants';
+import {
+  PAYMENT_CALCULATION_JOB,
+  PAYMENT_CALCULATION_QUEUE,
+} from './compensation.constants';
 import { PaymentsService } from './payments.service';
 import type {
   PaymentCalculationJobData,

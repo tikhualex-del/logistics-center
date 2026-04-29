@@ -61,7 +61,9 @@ describe('PaymentCalculationProcessor', () => {
   });
 
   it('returns a success envelope for completed calculations', async () => {
-    mockPaymentsService.runPaymentCalculationJob.mockResolvedValue(paymentResponse);
+    mockPaymentsService.runPaymentCalculationJob.mockResolvedValue(
+      paymentResponse,
+    );
 
     await expect(
       processor.process({

@@ -9,7 +9,10 @@ import {
   buildOrderStatusChangedNotification,
   buildRouteChangedNotification,
 } from '../notifications/notification-builders';
-import type { OrderCreatedEvent, OrderStatusChangedEvent } from '../orders/orders.events';
+import type {
+  OrderCreatedEvent,
+  OrderStatusChangedEvent,
+} from '../orders/orders.events';
 import type {
   RouteBuiltEvent,
   RouteCancelledEvent,

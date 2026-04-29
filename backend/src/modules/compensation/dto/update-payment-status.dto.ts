@@ -15,7 +15,7 @@ export class UpdatePaymentStatusDto {
   declare status: PaymentStatus;
 
   @ApiPropertyOptional({ example: 'Finance team approved the payout batch' })
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsOptional()

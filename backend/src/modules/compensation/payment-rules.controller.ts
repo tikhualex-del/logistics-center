@@ -39,7 +39,11 @@ export class PaymentRulesController {
     @CurrentUser('id') userId: string,
     @Body() dto: CreatePaymentRuleDto,
   ): Promise<PaymentRuleResponseDto> {
-    return await this.paymentRulesService.createPaymentRule(companyId, userId, dto);
+    return await this.paymentRulesService.createPaymentRule(
+      companyId,
+      userId,
+      dto,
+    );
   }
 
   @Get()

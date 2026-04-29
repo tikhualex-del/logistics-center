@@ -12,6 +12,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { stringifyUnknown } from '../../../common/utils/stringify-unknown';
 import { SUPPORTED_OUTBOUND_WEBHOOK_EVENTS } from '../integrations.constants';
 
 export class CreateWebhookRegistrationDto {
@@ -53,7 +54,8 @@ export class CreateWebhookRegistrationDto {
   @ApiPropertyOptional({
     enum: SUPPORTED_OUTBOUND_WEBHOOK_EVENTS,
     isArray: true,
-    description: 'If omitted, the integration receives all supported outbound events',
+    description:
+      'If omitted, the integration receives all supported outbound events',
   })
   @IsOptional()
   @IsArray()
@@ -79,7 +81,7 @@ export class CreateWebhookRegistrationDto {
 
 function normalizeRequiredString(value: unknown): string {
   if (typeof value !== 'string') {
-    return String(value ?? '');
+    return stringifyUnknown(value);
   }
 
   return value.trim();

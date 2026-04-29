@@ -193,7 +193,9 @@ describe('PaymentRulesService', () => {
     mockPrismaService.paymentRuleVersion.findFirst
       .mockResolvedValueOnce(baseRule)
       .mockResolvedValueOnce(baseRule);
-    mockPrismaService.paymentRuleVersion.create.mockResolvedValue(otherRuleVersion);
+    mockPrismaService.paymentRuleVersion.create.mockResolvedValue(
+      otherRuleVersion,
+    );
 
     const result = await service.updatePaymentRule(
       'company-1',

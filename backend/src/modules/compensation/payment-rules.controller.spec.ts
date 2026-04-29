@@ -50,7 +50,9 @@ describe('PaymentRulesController', () => {
       value: 250,
       conditions: { zoneId: 'zone-1' },
     };
-    mockPaymentRulesService.createPaymentRule.mockResolvedValue(paymentRuleResponse);
+    mockPaymentRulesService.createPaymentRule.mockResolvedValue(
+      paymentRuleResponse,
+    );
 
     await expect(
       controller.createPaymentRule('company-1', 'user-1', dto),
@@ -68,9 +70,9 @@ describe('PaymentRulesController', () => {
       paymentRuleResponse,
     ]);
 
-    await expect(controller.listPaymentRules('company-1', query)).resolves.toEqual(
-      [paymentRuleResponse],
-    );
+    await expect(
+      controller.listPaymentRules('company-1', query),
+    ).resolves.toEqual([paymentRuleResponse]);
     expect(mockPaymentRulesService.listPaymentRules).toHaveBeenCalledWith(
       'company-1',
       query,
@@ -92,7 +94,12 @@ describe('PaymentRulesController', () => {
     mockPaymentRulesService.updatePaymentRule.mockResolvedValue(updatedRule);
 
     await expect(
-      controller.updatePaymentRule('company-1', 'user-1', 'rule-version-1', dto),
+      controller.updatePaymentRule(
+        'company-1',
+        'user-1',
+        'rule-version-1',
+        dto,
+      ),
     ).resolves.toEqual(updatedRule);
     expect(mockPaymentRulesService.updatePaymentRule).toHaveBeenCalledWith(
       'company-1',
