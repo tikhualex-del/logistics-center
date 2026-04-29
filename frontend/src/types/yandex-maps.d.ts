@@ -24,6 +24,10 @@ declare namespace ymaps {
     yandexMapDisablePoiInteractivity?: boolean
   }
 
+  interface OptionManager {
+    set(key: string, value: unknown): this
+  }
+
   class Map {
     constructor(
       container: HTMLElement | string,
@@ -47,6 +51,7 @@ declare namespace ymaps {
 
   class GeoObject {
     events: EventManager
+    options: OptionManager
   }
 
   interface PlacemarkGeometry {
@@ -96,6 +101,23 @@ declare namespace ymaps {
       options?: Record<string, unknown>,
     )
   }
+
+  interface GeoObjectSequence<T extends GeoObject = GeoObject> {
+    each(callback: (object: T) => void): void
+  }
+
+  type RoutePath = GeoObject
+  type RouteWayPoint = GeoObject
+
+  interface RouteResult extends GeoObject {
+    getPaths(): GeoObjectSequence<RoutePath>
+    getWayPoints(): GeoObjectSequence<RouteWayPoint>
+  }
+
+  function route(
+    referencePoints: Coordinates[],
+    params?: Record<string, unknown>,
+  ): Promise<RouteResult>
 
   interface EventManager {
     add(

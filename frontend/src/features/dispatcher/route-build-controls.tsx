@@ -8,8 +8,8 @@ import type { Order, OrderStatus, Route } from '@/api'
 import { useBuildRoutes, useOrders } from '@/hooks'
 import {
   getOrderDisplayId,
-  getOrderTimeSlotFilter,
   orderMatchesSearch,
+  orderMatchesTimeRange,
 } from '@/lib/order-utils'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/store'
@@ -30,7 +30,8 @@ export function RouteBuildControls(): React.ReactElement {
     selectedOrderId,
     searchQuery,
     statusFilter,
-    timeSlotFilter,
+    startTimeFilter,
+    endTimeFilter,
     setRoutesLayer,
     setSelectedRouteId,
   } = useUiStore()
@@ -49,11 +50,13 @@ export function RouteBuildControls(): React.ReactElement {
   const routeOrders = prioritizeSelectedOrder(
     orders.filter((order) => {
       const matchesSearch = orderMatchesSearch(order, searchQuery)
-      const matchesSlot =
-        timeSlotFilter === null ||
-        getOrderTimeSlotFilter(order) === timeSlotFilter
+      const matchesTimeRange = orderMatchesTimeRange(
+        order,
+        startTimeFilter,
+        endTimeFilter,
+      )
 
-      return matchesSearch && matchesSlot && isRoutableOrder(order)
+      return matchesSearch && matchesTimeRange && isRoutableOrder(order)
     }),
     selectedOrderId,
   )
@@ -182,11 +185,7 @@ function RouteBuildShell({
 }: {
   children: React.ReactNode
 }): React.ReactElement {
-  return (
-    <div className="absolute bottom-4 left-4 z-20 w-72 rounded-2xl border border-border bg-card/95 p-3 shadow-xl backdrop-blur">
-      {children}
-    </div>
-  )
+  return <section className="p-3">{children}</section>
 }
 
 function isRoutableOrder(order: Order): boolean {

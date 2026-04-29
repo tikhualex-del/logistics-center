@@ -60,6 +60,13 @@ export interface RouteFilters {
   date?: string
 }
 
+export interface RoutePreview {
+  totalDistanceMeters: number | null
+  totalDurationSeconds: number | null
+  provider: string | null
+  polyline: RouteCoordinate[]
+}
+
 export interface BuildRoutesDto {
   orderIds: string[]
   courierId?: string | null
@@ -120,6 +127,18 @@ export async function buildRoutes(data: BuildRoutesDto): Promise<Route> {
 }
 
 /**
+ * POST /api/v1/routes/preview
+ * Returns preview road geometry without creating a route.
+ */
+export async function previewRoute(data: BuildRoutesDto): Promise<RoutePreview> {
+  const response = await httpClient.post<ApiResponse<RoutePreview>>(
+    '/routes/preview',
+    data,
+  )
+  return response.data.data
+}
+
+/**
  * PATCH /api/v1/routes/:id
  * Allows manual route editing (courier assignment, point reorder, status change).
  */
@@ -131,5 +150,14 @@ export async function updateRoute(
     `/routes/${id}`,
     data,
   )
+  return response.data.data
+}
+
+/**
+ * DELETE /api/v1/routes/:id
+ * Soft-deletes an editable route and releases it from dispatcher lists.
+ */
+export async function deleteRoute(id: string): Promise<Route> {
+  const response = await httpClient.delete<ApiResponse<Route>>(`/routes/${id}`)
   return response.data.data
 }

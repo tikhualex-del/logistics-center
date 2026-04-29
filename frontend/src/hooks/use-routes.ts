@@ -10,9 +10,12 @@ import {
   getRoutes,
   getRoute,
   buildRoutes,
+  previewRoute,
   updateRoute,
+  deleteRoute,
   type Route,
   type RouteFilters,
+  type RoutePreview,
   type BuildRoutesDto,
   type UpdateRouteDto,
 } from '@/api/routes.api'
@@ -58,6 +61,31 @@ export function useRoute(
   })
 }
 
+export function useRoutePreview(
+  data: BuildRoutesDto | null,
+  options?: Partial<UseQueryOptions<RoutePreview>>,
+) {
+  return useQuery({
+    queryKey: QUERY_KEYS.routes.preview(
+      data
+        ? {
+            orderIds: data.orderIds,
+            courierId: data.courierId ?? null,
+            routeDate: data.routeDate,
+            mode: data.mode ?? 'driving',
+            optimizeWaypoints: data.optimizeWaypoints ?? true,
+            returnToStart: data.returnToStart ?? false,
+            locale: data.locale ?? null,
+          }
+        : undefined,
+    ),
+    queryFn: () => previewRoute(data!),
+    enabled: data !== null && data.orderIds.length >= 2,
+    staleTime: 0,
+    ...options,
+  })
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 /**
@@ -91,6 +119,23 @@ export function useUpdateRoute() {
         QUERY_KEYS.routes.detail(updatedRoute.id),
         updatedRoute,
       )
+    },
+  })
+}
+
+/**
+ * Soft-deletes a route. The backend marks it deleted, so normal route lists
+ * stop returning it after invalidation.
+ */
+export function useDeleteRoute() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteRoute(id),
+    onSuccess: (deletedRoute) => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.routes.all })
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.routes.detail(deletedRoute.id),
+      })
     },
   })
 }

@@ -65,6 +65,7 @@ export {
   getRoute,
   buildRoutes,
   updateRoute,
+  deleteRoute,
 } from './routes.api'
 export type {
   Route,

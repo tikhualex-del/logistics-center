@@ -29,6 +29,8 @@ export const QUERY_KEYS = {
     list: (filters?: Record<string, unknown>) =>
       ['routes', 'list', filters] as const,
     detail: (id: string) => ['routes', 'detail', id] as const,
+    preview: (params?: Record<string, unknown>) =>
+      ['routes', 'preview', params] as const,
   },
 
   zones: {

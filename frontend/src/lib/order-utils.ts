@@ -64,27 +64,6 @@ export function useOrderStatusOptions(): { value: OrderStatus; label: string }[]
   )
 }
 
-export type OrderTimeSlotFilter = 'morning' | 'day' | 'evening' | 'no-slot'
-
-const ORDER_TIME_SLOT_VALUES: { value: OrderTimeSlotFilter; key: string }[] = [
-  { value: 'morning', key: 'orderSlots.morning' },
-  { value: 'day', key: 'orderSlots.day' },
-  { value: 'evening', key: 'orderSlots.evening' },
-  { value: 'no-slot', key: 'orderSlots.none' },
-]
-
-export function useOrderTimeSlotOptions(): {
-  value: OrderTimeSlotFilter
-  label: string
-}[] {
-  const { t } = useTranslation()
-  return useMemo(
-    () =>
-      ORDER_TIME_SLOT_VALUES.map(({ value, key }) => ({ value, label: t(key) })),
-    [t],
-  )
-}
-
 /**
  * Formats an ISO datetime string to a short HH:mm time representation.
  * Returns "—" if the value is null or unparseable.
@@ -139,20 +118,6 @@ export function getOrderDisplayId(order: {
   return `#${order.id.slice(-8).toUpperCase()}`
 }
 
-export function getOrderTimeSlotFilter(order: Order): OrderTimeSlotFilter {
-  const slotSource = order.timeWindowFrom ?? order.scheduledDate
-
-  if (!slotSource) return 'no-slot'
-
-  const date = new Date(slotSource)
-  if (Number.isNaN(date.getTime())) return 'no-slot'
-
-  const hour = date.getHours()
-  if (hour < 12) return 'morning'
-  if (hour < 18) return 'day'
-  return 'evening'
-}
-
 export function orderMatchesSearch(order: Order, query: string): boolean {
   const normalizedQuery = query.trim().toLowerCase()
   if (!normalizedQuery) return true
@@ -164,4 +129,62 @@ export function orderMatchesSearch(order: Order, query: string): boolean {
     order.customerPhone,
     order.deliveryAddress,
   ].some((value) => value?.toLowerCase().includes(normalizedQuery))
+}
+
+const TIME_FILTER_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/
+
+export function orderMatchesTimeRange(
+  order: Order,
+  startTimeFilter: string | null,
+  endTimeFilter: string | null,
+): boolean {
+  const filterStart = parseTimeFilter(startTimeFilter)
+  const filterEnd = parseTimeFilter(endTimeFilter)
+
+  if (filterStart === null && filterEnd === null) return true
+
+  const { start, end } = getOrderDeliveryWindowMinutes(order)
+
+  if (filterStart !== null && filterEnd !== null) {
+    return start !== null && end !== null && start >= filterStart && end <= filterEnd
+  }
+
+  if (filterStart !== null) {
+    return start !== null && start >= filterStart
+  }
+
+  return end !== null && filterEnd !== null && end <= filterEnd
+}
+
+function parseTimeFilter(value: string | null): number | null {
+  if (!value) return null
+
+  const match = TIME_FILTER_PATTERN.exec(value)
+  if (!match) return null
+
+  return Number(match[1]) * 60 + Number(match[2])
+}
+
+function getOrderDeliveryWindowMinutes(order: Order): {
+  start: number | null
+  end: number | null
+} {
+  const windowStart = dateTimeToLocalMinutes(order.timeWindowFrom)
+  const windowEnd = dateTimeToLocalMinutes(order.timeWindowTo)
+
+  if (windowStart !== null || windowEnd !== null) {
+    return { start: windowStart, end: windowEnd }
+  }
+
+  const scheduledTime = dateTimeToLocalMinutes(order.scheduledDate)
+  return { start: scheduledTime, end: scheduledTime }
+}
+
+function dateTimeToLocalMinutes(value: string | null): number | null {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  return date.getHours() * 60 + date.getMinutes()
 }

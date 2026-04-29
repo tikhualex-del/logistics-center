@@ -2,27 +2,25 @@ import { useState } from 'react'
 import { isAxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import i18n from '@/i18n'
 import { QUERY_KEYS } from '@/api/query-keys'
 import type { ApiError } from '@/api/http-client'
 import type { Courier, Order, Route, RoutePoint } from '@/api'
-import { useCouriers, useOrders, useRoutes, useUpdateRoute } from '@/hooks'
+import {
+  useCouriers,
+  useDeleteRoute,
+  useOrders,
+  useRoutes,
+  useUpdateRoute,
+} from '@/hooks'
 import { getOrderDisplayId, getStatusLabel } from '@/lib/order-utils'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/store'
 
 const EDITABLE_ROUTE_STATUSES = ['draft', 'planned'] as const
-const ROUTE_STATUS_STEPS = [
-  'draft',
-  'planned',
-  'in_progress',
-  'completed',
-] as const
 
 export function RouteEditorPanel(): React.ReactElement {
   const { t } = useTranslation()
   const selectedDate = useUiStore((state) => state.selectedDate)
-  const selectedCourierId = useUiStore((state) => state.selectedCourierId)
   const selectedRouteId = useUiStore((state) => state.selectedRouteId)
   const setSelectedRouteId = useUiStore((state) => state.setSelectedRouteId)
 
@@ -83,9 +81,7 @@ export function RouteEditorPanel(): React.ReactElement {
       route={selectedRoute}
       routes={routes}
       orders={orders}
-      couriers={couriers}
       selectedDate={selectedDate}
-      selectedCourierId={selectedCourierId}
       onSelectRoute={setSelectedRouteId}
     />
   )
@@ -157,65 +153,39 @@ function RouteEditorForm({
   route,
   routes,
   orders,
-  couriers,
   selectedDate,
-  selectedCourierId,
   onSelectRoute,
 }: {
   route: Route
   routes: Route[]
   orders: Order[]
-  couriers: Courier[]
   selectedDate: string
-  selectedCourierId: string | null
   onSelectRoute: (id: string | null) => void
 }): React.ReactElement {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const updateRouteMutation = useUpdateRoute()
+  const deleteRouteMutation = useDeleteRoute()
   const initialOrderIds = getRouteOrderIds(route)
   const initialCourierId = route.courierId ?? ''
   const [draftOrderIds, setDraftOrderIds] = useState<string[]>(() => initialOrderIds)
-  const [draftCourierId, setDraftCourierId] = useState<string>(() => initialCourierId)
   const [localMessage, setLocalMessage] = useState<string | null>(null)
   const isEditable = isEditableRoute(route)
   const hasPointChanges = !areOrderIdsEqual(initialOrderIds, draftOrderIds)
-  const hasCourierChange = initialCourierId !== draftCourierId
-  const hasChanges = hasPointChanges || hasCourierChange
+  const hasChanges = hasPointChanges
+  const isRouteMutationPending =
+    updateRouteMutation.isPending || deleteRouteMutation.isPending
   const canSave =
     isEditable &&
     hasChanges &&
     draftOrderIds.length > 0 &&
-    !updateRouteMutation.isPending
+    !isRouteMutationPending
+  const canDelete = isEditable && !isRouteMutationPending
 
   const ordersById = new Map(orders.map((order) => [order.id, order]))
   const routePointsByOrderId = new Map(
     route.routePoints.map((point) => [point.orderId, point]),
   )
-  const selectedCourier =
-    selectedCourierId === null
-      ? null
-      : couriers.find((courier) => courier.id === selectedCourierId) ?? null
-  const assignedCourier =
-    route.courierId === null
-      ? null
-      : couriers.find((courier) => courier.id === route.courierId) ?? null
-
-  function handleCourierChange(nextCourierId: string): void {
-    if (!isEditable) return
-
-    setDraftCourierId(nextCourierId)
-    setLocalMessage(
-      nextCourierId
-        ? t('routes.editor.courierChangedLocal')
-        : t('routes.editor.courierClearedLocal'),
-    )
-  }
-
-  function handleUseSelectedCourier(): void {
-    if (!selectedCourier) return
-    handleCourierChange(selectedCourier.id)
-  }
 
   function handleDragStart(
     event: React.DragEvent<HTMLDivElement>,
@@ -274,7 +244,6 @@ function RouteEditorForm({
 
   function handleReset(): void {
     setDraftOrderIds(initialOrderIds)
-    setDraftCourierId(initialCourierId)
     setLocalMessage(null)
   }
 
@@ -286,7 +255,7 @@ function RouteEditorForm({
         id: route.id,
         data: {
           ...(hasPointChanges ? { orderIds: draftOrderIds } : {}),
-          courierId: draftCourierId.length > 0 ? draftCourierId : null,
+          courierId: initialCourierId.length > 0 ? initialCourierId : null,
           optimizeWaypoints: false,
         },
       },
@@ -305,6 +274,24 @@ function RouteEditorForm({
     )
   }
 
+  function handleDeleteRoute(): void {
+    if (!canDelete) return
+
+    const shouldDelete = window.confirm(t('routes.editor.deleteRouteConfirm'))
+    if (!shouldDelete) return
+
+    deleteRouteMutation.mutate(route.id, {
+      onSuccess: (deletedRoute) => {
+        onSelectRoute(null)
+        queryClient.setQueryData<Route[]>(
+          QUERY_KEYS.routes.list({ date: selectedDate }),
+          (currentRoutes = []) =>
+            currentRoutes.filter((item) => item.id !== deletedRoute.id),
+        )
+      },
+    })
+  }
+
   return (
     <RouteEditorShell>
       <div className="flex items-start justify-between gap-3">
@@ -318,8 +305,6 @@ function RouteEditorForm({
         </div>
         <RouteStatusBadge route={route} />
       </div>
-
-      <RouteStatusIndicator route={route} assignedCourier={assignedCourier} />
 
       {routes.length > 1 && (
         <label className="mt-3 block">
@@ -343,44 +328,6 @@ function RouteEditorForm({
           {t('routes.editor.onlyDraftEditable')}
         </p>
       )}
-
-      <div className="mt-3 rounded-xl border border-border bg-background/80 p-2">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-[11px] font-semibold text-foreground">
-              {t('routes.editor.courierAssignment')}
-            </p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
-              {t('routes.editor.courierHint')}
-            </p>
-          </div>
-          {selectedCourier && selectedCourier.id !== draftCourierId && (
-            <button
-              type="button"
-              onClick={handleUseSelectedCourier}
-              disabled={!isEditable || updateRouteMutation.isPending}
-              className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('routes.editor.useSelected')}
-            </button>
-          )}
-        </div>
-
-        <select
-          value={draftCourierId}
-          onChange={(event) => handleCourierChange(event.target.value)}
-          disabled={!isEditable || updateRouteMutation.isPending}
-          className="mt-2 h-8 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label={t('routes.editor.assignCourierAria')}
-        >
-          <option value="">{t('routes.editor.noCourier')}</option>
-          {couriers.map((courier) => (
-            <option key={courier.id} value={courier.id}>
-              {formatCourierName(courier)} - {t(`couriers.status.${courier.status}`)}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <div
         onDragOver={handleDragOver}
@@ -468,7 +415,7 @@ function RouteEditorForm({
         </p>
       )}
 
-      {localMessage && !updateRouteMutation.isError && (
+      {localMessage && !updateRouteMutation.isError && !deleteRouteMutation.isError && (
         <p className="mt-2 rounded-md bg-blue-500/10 px-2 py-1.5 text-[11px] text-blue-700">
           {localMessage}
         </p>
@@ -476,7 +423,19 @@ function RouteEditorForm({
 
       {updateRouteMutation.isError && (
         <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
-          {getRouteEditError(updateRouteMutation.error)}
+          {getRouteMutationError(
+            updateRouteMutation.error,
+            t('routes.editor.updateFailed'),
+          )}
+        </p>
+      )}
+
+      {deleteRouteMutation.isError && (
+        <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
+          {getRouteMutationError(
+            deleteRouteMutation.error,
+            t('routes.editor.deleteFailed'),
+          )}
         </p>
       )}
 
@@ -484,7 +443,7 @@ function RouteEditorForm({
         <button
           type="button"
           onClick={handleReset}
-          disabled={!hasChanges || updateRouteMutation.isPending}
+          disabled={!hasChanges || isRouteMutationPending}
           className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('common.reset')}
@@ -503,6 +462,16 @@ function RouteEditorForm({
           {updateRouteMutation.isPending ? t('common.saving') : t('routes.editor.save')}
         </button>
       </div>
+      <button
+        type="button"
+        onClick={handleDeleteRoute}
+        disabled={!canDelete}
+        className="mt-2 w-full rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {deleteRouteMutation.isPending
+          ? t('routes.editor.deletingRoute')
+          : t('routes.editor.deleteRoute')}
+      </button>
     </RouteEditorShell>
   )
 }
@@ -512,11 +481,7 @@ function RouteEditorShell({
 }: {
   children: React.ReactNode
 }): React.ReactElement {
-  return (
-    <div className="absolute left-4 top-4 z-20 w-80 rounded-2xl border border-border bg-card/95 p-3 shadow-xl backdrop-blur">
-      {children}
-    </div>
-  )
+  return <section className="p-3">{children}</section>
 }
 
 function RouteStatusBadge({ route }: { route: Route }): React.ReactElement {
@@ -531,60 +496,6 @@ function RouteStatusBadge({ route }: { route: Route }): React.ReactElement {
     >
       {humanizeStatus(route.status)}
     </span>
-  )
-}
-
-function RouteStatusIndicator({
-  route,
-  assignedCourier,
-}: {
-  route: Route
-  assignedCourier: Courier | null
-}): React.ReactElement {
-  const activeStepIndex = ROUTE_STATUS_STEPS.findIndex(
-    (status) => status === route.status,
-  )
-  const isCancelled = route.status === 'cancelled'
-
-  return (
-    <div className="mt-3 rounded-xl border border-border bg-background/80 p-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold text-foreground">
-          Route status
-        </span>
-        <span className="text-[10px] text-muted-foreground">
-          {assignedCourier ? formatCourierName(assignedCourier) : 'Unassigned'}
-        </span>
-      </div>
-      <div className="mt-2 grid grid-cols-4 gap-1">
-        {ROUTE_STATUS_STEPS.map((status, index) => {
-          const isActive = index <= activeStepIndex && !isCancelled
-          return (
-            <span
-              key={status}
-              className={cn(
-                'h-1.5 rounded-full transition-colors',
-                isActive ? 'bg-primary' : 'bg-muted',
-              )}
-              title={humanizeStatus(status)}
-            />
-          )
-        })}
-      </div>
-      <p
-        className={cn(
-          'mt-2 rounded-lg px-2 py-1.5 text-[11px]',
-          isCancelled
-            ? 'bg-destructive/10 text-destructive'
-            : 'bg-primary/10 text-primary',
-        )}
-      >
-        {humanizeStatus(route.status)}
-        {assignedCourier
-          ? ` route assigned to ${formatCourierName(assignedCourier)}.`
-          : ' route has no courier yet.'}
-      </p>
-    </div>
   )
 }
 
@@ -705,7 +616,7 @@ function humanizeStatus(status: string): string {
   return status.replaceAll('_', ' ')
 }
 
-function getRouteEditError(error: unknown): string {
+function getRouteMutationError(error: unknown, fallbackMessage: string): string {
   if (isAxiosError<ApiError>(error)) {
     const message = error.response?.data?.message as unknown
     if (Array.isArray(message)) return message.join(', ')
@@ -716,5 +627,5 @@ function getRouteEditError(error: unknown): string {
     return error.message
   }
 
-  return 'Route update failed.'
+  return fallbackMessage
 }

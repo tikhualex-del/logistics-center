@@ -25,8 +25,10 @@ export {
 export {
   useRoutes,
   useRoute,
+  useRoutePreview,
   useBuildRoutes,
   useUpdateRoute,
+  useDeleteRoute,
 } from './use-routes'
 
 export { useZones, useZone } from './use-zones'

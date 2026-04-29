@@ -13,12 +13,22 @@ import type {
   RouteStatus,
   Zone,
 } from '@/api'
+import type { RoutePreview } from '@/store'
+import {
+  dispatchMapOrderDrop,
+  ROUTE_DROP_TARGET_SELECTOR,
+} from './route-dnd'
 
 type MapObject =
   | ymaps.GeoObject
   | ymaps.Placemark
   | ymaps.Polygon
   | ymaps.Polyline
+
+interface ClientPoint {
+  clientX: number
+  clientY: number
+}
 
 const COURIER_MARKER_COLORS: Record<CourierStatus, string> = {
   inactive: '#9ca3af',
@@ -39,15 +49,91 @@ const ROUTE_COLORS: Record<RouteStatus, string> = {
 export function useOrderMarkers(
   map: ymaps.Map | null,
   orders: Order[],
-  _selectedOrderId: string | null,
-  onSelectOrder: (id: string) => void,
+  selectedOrderId: string | null,
+  selectedOrderIds: string[],
+  onSelectOrder: (id: string, multiSelect?: boolean) => void,
 ): void {
   // Store callback in a ref to avoid re-running the effect when it changes
   const onSelectRef = useRef(onSelectOrder)
+  const isMultiSelectKeyPressedRef = useRef(false)
+  const pointerMultiSelectRef = useRef(false)
+  const pointerMultiSelectTimerRef = useRef<number | null>(null)
+  const lastPointerPositionRef = useRef<ClientPoint | null>(null)
+  const suppressClickOrderIdRef = useRef<string | null>(null)
+  const suppressClickTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     onSelectRef.current = onSelectOrder
   }, [onSelectOrder])
+
+  useEffect(() => {
+    const clearPointerModifier = () => {
+      if (pointerMultiSelectTimerRef.current !== null) {
+        window.clearTimeout(pointerMultiSelectTimerRef.current)
+        pointerMultiSelectTimerRef.current = null
+      }
+
+      pointerMultiSelectRef.current = false
+    }
+
+    const syncMultiSelectKey = (event: KeyboardEvent) => {
+      isMultiSelectKeyPressedRef.current = event.ctrlKey || event.metaKey
+    }
+
+    const syncPointerModifier = (event: MouseEvent | PointerEvent) => {
+      lastPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      }
+      pointerMultiSelectRef.current = event.ctrlKey || event.metaKey
+
+      if (pointerMultiSelectTimerRef.current !== null) {
+        window.clearTimeout(pointerMultiSelectTimerRef.current)
+      }
+
+      pointerMultiSelectTimerRef.current = window.setTimeout(() => {
+        pointerMultiSelectRef.current = false
+        pointerMultiSelectTimerRef.current = null
+      }, 1500)
+    }
+
+    const trackPointerPosition = (event: MouseEvent | PointerEvent) => {
+      lastPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      }
+    }
+
+    const clearMultiSelectState = () => {
+      isMultiSelectKeyPressedRef.current = false
+      clearPointerModifier()
+    }
+
+    window.addEventListener('keydown', syncMultiSelectKey, true)
+    window.addEventListener('keyup', syncMultiSelectKey, true)
+    window.addEventListener('pointerdown', syncPointerModifier, true)
+    window.addEventListener('mousedown', syncPointerModifier, true)
+    window.addEventListener('pointermove', trackPointerPosition, true)
+    window.addEventListener('mousemove', trackPointerPosition, true)
+    window.addEventListener('blur', clearMultiSelectState)
+    document.addEventListener('visibilitychange', clearMultiSelectState)
+
+    return () => {
+      window.removeEventListener('keydown', syncMultiSelectKey, true)
+      window.removeEventListener('keyup', syncMultiSelectKey, true)
+      window.removeEventListener('pointerdown', syncPointerModifier, true)
+      window.removeEventListener('mousedown', syncPointerModifier, true)
+      window.removeEventListener('pointermove', trackPointerPosition, true)
+      window.removeEventListener('mousemove', trackPointerPosition, true)
+      window.removeEventListener('blur', clearMultiSelectState)
+      document.removeEventListener('visibilitychange', clearMultiSelectState)
+      clearPointerModifier()
+      if (suppressClickTimerRef.current !== null) {
+        window.clearTimeout(suppressClickTimerRef.current)
+        suppressClickTimerRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!map || orders.length === 0) return
@@ -63,6 +149,18 @@ export function useOrderMarkers(
       ]
 
       try {
+        const isSelected =
+          order.id === selectedOrderId || selectedOrderIds.includes(order.id)
+        const placemarkOptions = {
+          preset: isSelected
+            ? 'islands#blueStretchyIcon'
+            : 'islands#redStretchyIcon',
+          draggable: true,
+          cursor: 'grab',
+        } satisfies ymaps.PlacemarkOptions & {
+          draggable: boolean
+          cursor: string
+        }
         const placemark = new window.ymaps.Placemark(
           coords,
           {
@@ -70,14 +168,44 @@ export function useOrderMarkers(
             balloonContent: buildOrderBalloon(order),
             iconContent: String(order.orderNumber ?? getOrderDisplayId(order)),
           },
-          {
-            preset: 'islands#redStretchyIcon',
-          },
+          placemarkOptions,
         )
 
-        placemark.events.add('click', () => {
-          onSelectRef.current(order.id)
+        placemark.events.add('click', (event: unknown) => {
+          if (suppressClickOrderIdRef.current === order.id) {
+            suppressClickOrderIdRef.current = null
+            return
+          }
+
+          const multiSelect =
+            isMultiSelectKeyPressedRef.current ||
+            pointerMultiSelectRef.current ||
+            hasModifierKeyFromYandexEvent(event)
+
+          pointerMultiSelectRef.current = false
+          onSelectRef.current(order.id, multiSelect)
           void map.setCenter(coords, Math.max(map.getZoom(), 12))
+        })
+
+        placemark.events.add('dragend', (event: unknown) => {
+          resetPlacemarkCoordinates(placemark, coords)
+          suppressClickOrderIdRef.current = order.id
+
+          if (suppressClickTimerRef.current !== null) {
+            window.clearTimeout(suppressClickTimerRef.current)
+          }
+
+          suppressClickTimerRef.current = window.setTimeout(() => {
+            suppressClickOrderIdRef.current = null
+            suppressClickTimerRef.current = null
+          }, 250)
+
+          const point =
+            getClientPointFromYandexEvent(event) ?? lastPointerPositionRef.current
+
+          if (point && isRouteDropTargetAtPoint(point)) {
+            dispatchMapOrderDrop(order.id)
+          }
         })
 
         map.geoObjects.add(placemark)
@@ -96,9 +224,8 @@ export function useOrderMarkers(
         }
       })
     }
-    // selectedOrderId intentionally excluded — it does not affect marker creation.
     // onSelectOrder stored in ref to keep deps stable.
-  }, [map, orders])
+  }, [map, orders, selectedOrderId, selectedOrderIds])
 }
 
 export function useZonePolygons(map: ymaps.Map | null, zones: Zone[]): void {
@@ -149,16 +276,25 @@ export function useRouteLayer(
   map: ymaps.Map | null,
   routes: Route[],
   visible: boolean,
+  displayMode: 'roads' | 'lines',
+  routePreview: RoutePreview | null,
+  routePreviewRoadCoordinates: ymaps.Coordinates[] | undefined,
   selectedRouteId: string | null,
   onSelectRoute: (id: string) => void,
 ): void {
   useEffect(() => {
     if (!map || !visible) return
 
-    const polylines: ymaps.Polyline[] = []
+    const mapObjects: ymaps.GeoObject[] = []
+    const previewCoordinates =
+      displayMode === 'roads' && routePreviewRoadCoordinates && routePreviewRoadCoordinates.length > 1
+        ? routePreviewRoadCoordinates
+        : getPreviewCoordinates(routePreview)
 
-    routes.forEach((route) => {
-      const coordinates = getRouteCoordinates(route)
+    const addRoutePolyline = (
+      route: Route,
+      coordinates: ymaps.Coordinates[],
+    ): void => {
       if (coordinates.length < 2) return
 
       const isSelected = route.id === selectedRouteId
@@ -180,19 +316,64 @@ export function useRouteLayer(
       })
 
       map.geoObjects.add(polyline)
-      polylines.push(polyline)
+      mapObjects.push(polyline)
+    }
+
+    const addPreviewPolyline = (coordinates: ymaps.Coordinates[]): void => {
+      if (coordinates.length < 2) return
+
+      const polyline = new window.ymaps.Polyline(
+        coordinates,
+        {
+          hintContent: 'Новый черновик',
+          balloonContent: 'Новый черновик',
+        },
+        {
+          strokeColor: ROUTE_COLORS.draft,
+          strokeOpacity: 0.9,
+          strokeWidth: 4,
+        },
+      )
+
+      map.geoObjects.add(polyline)
+      mapObjects.push(polyline)
+    }
+
+    routes.forEach((route) => {
+      addRoutePolyline(
+        route,
+        getRouteCoordinates(
+          route,
+          displayMode,
+          routePreview,
+          routePreviewRoadCoordinates,
+        ),
+      )
     })
 
+    if (routePreview?.routeId === null) {
+      addPreviewPolyline(previewCoordinates)
+    }
+
     return () => {
-      polylines.forEach((polyline) => {
+      mapObjects.forEach((object) => {
         try {
-          map.geoObjects.remove(polyline)
+          map.geoObjects.remove(object)
         } catch {
           // ignore Yandex Maps cleanup race conditions
         }
       })
     }
-  }, [map, onSelectRoute, routes, selectedRouteId, visible])
+  }, [
+    displayMode,
+    map,
+    onSelectRoute,
+    routePreview,
+    routePreviewRoadCoordinates,
+    routes,
+    selectedRouteId,
+    visible,
+  ])
 }
 
 export function useCourierLayer(
@@ -274,8 +455,28 @@ function toYandexPolygonGeometry(
     .filter((ring) => ring.length >= 3)
 }
 
-function getRouteCoordinates(route: Route): ymaps.Coordinates[] {
-  if (route.polyline.length > 1) {
+function getRouteCoordinates(
+  route: Route,
+  displayMode: 'roads' | 'lines',
+  routePreview: RoutePreview | null,
+  routePreviewRoadCoordinates?: ymaps.Coordinates[],
+): ymaps.Coordinates[] {
+  if (
+    routePreview?.routeId === route.id &&
+    routePreview.points.length > 1
+  ) {
+    if (
+      displayMode === 'roads' &&
+      routePreviewRoadCoordinates &&
+      routePreviewRoadCoordinates.length > 1
+    ) {
+      return routePreviewRoadCoordinates
+    }
+
+    return routePreview.points.map((point) => [point.latitude, point.longitude])
+  }
+
+  if (displayMode === 'roads' && route.polyline.length > 1) {
     return route.polyline.map((point) => [point.latitude, point.longitude])
   }
 
@@ -291,6 +492,16 @@ function getRouteCoordinates(route: Route): ymaps.Coordinates[] {
         point.deliveryLatitude !== null && point.deliveryLongitude !== null,
     )
     .map((point) => [point.deliveryLatitude, point.deliveryLongitude])
+}
+
+function getPreviewCoordinates(
+  routePreview: RoutePreview | null,
+): ymaps.Coordinates[] {
+  if (!routePreview || routePreview.routeId !== null || routePreview.points.length < 2) {
+    return []
+  }
+
+  return routePreview.points.map((point) => [point.latitude, point.longitude])
 }
 
 function buildOrderBalloon(order: Order): string {
@@ -350,6 +561,76 @@ function buildCourierBalloon(courier: Courier): string {
     <strong>${escapeHtml(name)}</strong>
     <br /><small>${escapeHtml(courier.status)} · ${escapeHtml(lastSeen)}</small>
   `
+}
+
+function hasModifierKeyFromYandexEvent(event: unknown): boolean {
+  if (!isYandexEvent(event)) return false
+
+  const domEvent = event.get('domEvent')
+  if (hasModifierKey(domEvent)) return true
+
+  if (isRecord(domEvent) && hasModifierKey(domEvent['originalEvent'])) {
+    return true
+  }
+
+  return false
+}
+
+function getClientPointFromYandexEvent(event: unknown): ClientPoint | null {
+  if (!isYandexEvent(event)) return null
+
+  const domEvent = event.get('domEvent')
+  return readClientPoint(domEvent) ?? readClientPointFromRecord(domEvent)
+}
+
+function readClientPointFromRecord(value: unknown): ClientPoint | null {
+  if (!isRecord(value)) return null
+  return readClientPoint(value['originalEvent'])
+}
+
+function readClientPoint(value: unknown): ClientPoint | null {
+  if (!isRecord(value)) return null
+
+  const clientX = value['clientX']
+  const clientY = value['clientY']
+
+  if (typeof clientX !== 'number' || typeof clientY !== 'number') {
+    return null
+  }
+
+  return { clientX, clientY }
+}
+
+function isRouteDropTargetAtPoint(point: ClientPoint): boolean {
+  const element = document.elementFromPoint(point.clientX, point.clientY)
+  return Boolean(element?.closest(ROUTE_DROP_TARGET_SELECTOR))
+}
+
+function resetPlacemarkCoordinates(
+  placemark: ymaps.Placemark,
+  coords: ymaps.Coordinates,
+): void {
+  const geometry = placemark.geometry as
+    | { setCoordinates?: (coordinates: ymaps.Coordinates) => void }
+    | null
+    | undefined
+
+  geometry?.setCoordinates?.(coords)
+}
+
+function isYandexEvent(value: unknown): value is { get(key: string): unknown } {
+  return isRecord(value) && typeof value['get'] === 'function'
+}
+
+function hasModifierKey(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    (value['ctrlKey'] === true || value['metaKey'] === true)
+  )
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 function escapeHtml(value: string): string {

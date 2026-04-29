@@ -1,7 +1,21 @@
 import { create } from 'zustand'
 import type { AlertNotificationPayload } from '@/api/socket-client'
 import type { OrderStatus } from '@/api/orders.api'
-import type { OrderTimeSlotFilter } from '@/lib/order-utils'
+
+export type RouteDisplayMode = 'roads' | 'lines'
+export interface RoutePreviewPoint {
+  orderId: string
+  latitude: number
+  longitude: number
+}
+
+export interface RoutePreview {
+  routeId: string | null
+  orderIds: string[]
+  routeDate: string
+  courierId: string | null
+  points: RoutePreviewPoint[]
+}
 
 /**
  * UI store — holds transient interface state only.
@@ -24,15 +38,23 @@ function todayIso(): string {
 interface UiState {
   /** Dispatcher map: selected order ID (highlighted on map + detail panel) */
   selectedOrderId: string | null
+  /** Dispatcher map: selected order IDs for multi-select highlighting */
+  selectedOrderIds: string[]
   /** Dispatcher map: selected courier ID */
   selectedCourierId: string | null
   /** Dispatcher map: selected route ID */
   selectedRouteId: string | null
   /** Dispatcher map: whether routes layer is visible */
   showRoutes: boolean
+  /** Dispatcher map: route path display mode */
+  routeDisplayMode: RouteDisplayMode
+  /** Dispatcher map: unsaved local route preview for immediate redraw */
+  routePreview: RoutePreview | null
   /** Dispatcher map: whether couriers layer is visible */
   showCouriers: boolean
-  /** Global sidebar collapsed state */
+  /** Global sidebar drawer open state */
+  sidebarOpen: boolean
+  /** Legacy sidebar collapsed state */
   sidebarCollapsed: boolean
   /** Top bar: currently selected date (ISO format YYYY-MM-DD, default today) */
   selectedDate: string
@@ -44,16 +66,25 @@ interface UiState {
   alertToasts: AlertNotificationPayload[]
   /** Dispatcher order list: status filter (null = show all) */
   statusFilter: OrderStatus | null
-  /** Dispatcher order list: time slot filter string (null = show all) */
-  timeSlotFilter: OrderTimeSlotFilter | null
+  /** Dispatcher order list: delivery window start time filter (HH:mm, null = no lower bound) */
+  startTimeFilter: string | null
+  /** Dispatcher order list: delivery window end time filter (HH:mm, null = no upper bound) */
+  endTimeFilter: string | null
 
   setSelectedOrderId: (id: string | null) => void
+  selectOrder: (id: string, multiSelect?: boolean) => void
+  clearOrderSelection: () => void
   setSelectedCourierId: (id: string | null) => void
   setSelectedRouteId: (id: string | null) => void
   setRoutesLayer: (visible: boolean) => void
+  setRouteDisplayMode: (mode: RouteDisplayMode) => void
+  setRoutePreview: (preview: RoutePreview | null) => void
+  clearRoutePreview: () => void
   toggleRoutesLayer: () => void
   toggleCouriersLayer: () => void
   toggleSidebar: () => void
+  openSidebar: () => void
+  closeSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setSelectedDate: (date: string) => void
   setSearchQuery: (query: string) => void
@@ -63,30 +94,75 @@ interface UiState {
   dismissAlertToast: (id: string) => void
   clearAlertToasts: () => void
   setStatusFilter: (status: OrderStatus | null) => void
-  setTimeSlotFilter: (slot: OrderTimeSlotFilter | null) => void
+  setStartTimeFilter: (time: string | null) => void
+  setEndTimeFilter: (time: string | null) => void
+  clearTimeFilter: () => void
 }
 
 export const useUiStore = create<UiState>()((set) => ({
   selectedOrderId: null,
+  selectedOrderIds: [],
   selectedCourierId: null,
   selectedRouteId: null,
   showRoutes: true,
+  routeDisplayMode: 'roads',
+  routePreview: null,
   showCouriers: true,
+  sidebarOpen: false,
   sidebarCollapsed: false,
   selectedDate: todayIso(),
   searchQuery: '',
   alertCount: 0,
   alertToasts: [],
   statusFilter: null,
-  timeSlotFilter: null,
+  startTimeFilter: null,
+  endTimeFilter: null,
 
-  setSelectedOrderId: (id) => set({ selectedOrderId: id }),
+  setSelectedOrderId: (id) =>
+    set({
+      selectedOrderId: id,
+      selectedOrderIds: id ? [id] : [],
+    }),
+  selectOrder: (id, multiSelect = false) =>
+    set((state) => {
+      if (!multiSelect) {
+        return {
+          selectedOrderId: id,
+          selectedOrderIds: [id],
+        }
+      }
+
+      const isSelected = state.selectedOrderIds.includes(id)
+      const selectedOrderIds = isSelected
+        ? state.selectedOrderIds.filter((selectedId) => selectedId !== id)
+        : [...state.selectedOrderIds, id]
+      const selectedOrderId = isSelected
+        ? state.selectedOrderId === id
+          ? selectedOrderIds[selectedOrderIds.length - 1] ?? null
+          : state.selectedOrderId
+        : id
+
+      return {
+        selectedOrderId,
+        selectedOrderIds,
+      }
+    }),
+  clearOrderSelection: () =>
+    set({
+      selectedOrderId: null,
+      selectedOrderIds: [],
+    }),
   setSelectedCourierId: (id) => set({ selectedCourierId: id }),
   setSelectedRouteId: (id) => set({ selectedRouteId: id }),
   setRoutesLayer: (visible) => set({ showRoutes: visible }),
+  setRouteDisplayMode: (mode) => set({ routeDisplayMode: mode }),
+  setRoutePreview: (preview) => set({ routePreview: preview }),
+  clearRoutePreview: () => set({ routePreview: null }),
   toggleRoutesLayer: () => set((state) => ({ showRoutes: !state.showRoutes })),
   toggleCouriersLayer: () => set((state) => ({ showCouriers: !state.showCouriers })),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+  openSidebar: () => set({ sidebarOpen: true }),
+  closeSidebar: () => set({ sidebarOpen: false }),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   setSelectedDate: (date) => set({ selectedDate: date }),
   setSearchQuery: (query) => set({ searchQuery: query }),
@@ -105,5 +181,7 @@ export const useUiStore = create<UiState>()((set) => ({
     })),
   clearAlertToasts: () => set({ alertToasts: [] }),
   setStatusFilter: (status) => set({ statusFilter: status }),
-  setTimeSlotFilter: (slot) => set({ timeSlotFilter: slot }),
+  setStartTimeFilter: (time) => set({ startTimeFilter: time }),
+  setEndTimeFilter: (time) => set({ endTimeFilter: time }),
+  clearTimeFilter: () => set({ startTimeFilter: null, endTimeFilter: null }),
 }))
