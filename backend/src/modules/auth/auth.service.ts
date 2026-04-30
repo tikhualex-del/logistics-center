@@ -5,22 +5,41 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, AuditActorRole } from '@prisma/client';
+import {
+  AuditActorRole,
+  CompanyStatus,
+  PlatformAdminStatus,
+  PlatformAuditActorType,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import type { CookieOptions } from 'express';
 import { PinoLogger } from 'nestjs-pino';
+import { buildUniqueSlug } from '../../common/utils/slug';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { AuthenticatedUser } from './auth-request.types';
+import type {
+  AuthenticatedPlatformAdmin,
+  AuthenticatedTenantUser,
+  TenantAuthenticatedUser,
+} from './auth-request.types';
 import { getAuthSecret } from './auth.config';
 import { LoginDto } from './dto/login.dto';
+import { PlatformLoginDto } from './dto/platform-login.dto';
+import {
+  PlatformAuthAdminDto,
+  PlatformTokenResponseDto,
+} from './dto/platform-token-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthUserDto, TokenResponseDto } from './dto/token-response.dto';
 
 export interface JwtPayload {
   sub: string;
-  companyId: string;
-  role: string;
-  email: string;
+  companyId?: string;
+  role?: string;
+  email?: string;
+  sessionId?: string;
+  type?: 'platform' | 'impersonation';
 }
 
 export interface RefreshJwtPayload {
@@ -30,6 +49,9 @@ export interface RefreshJwtPayload {
 
 const BCRYPT_ROUNDS = 12;
 const ACCESS_TOKEN_TTL = '15m';
+const PLATFORM_ACCESS_TOKEN_TTL = '1h';
+const IMPERSONATION_ACCESS_TOKEN_TTL = '1h';
+const IMPERSONATION_ACCESS_TOKEN_MAX_AGE_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL = '30d';
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -97,7 +119,10 @@ export class AuthService {
     const user = await this.prisma.runWithoutTenant(async () => {
       return this.prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { name: dto.companyName },
+          data: {
+            name: dto.companyName,
+            slug: buildUniqueSlug(dto.companyName),
+          },
         });
 
         const newUser = await tx.user.create({
@@ -225,6 +250,66 @@ export class AuthService {
     return { accessToken, refreshToken, user: mapToAuthUser(user) };
   }
 
+  async loginPlatform(
+    dto: PlatformLoginDto,
+  ): Promise<PlatformTokenResponseDto> {
+    const admin = await this.prisma.runWithoutTenant(async () => {
+      return this.prisma.platformSuperAdmin.findUnique({
+        where: { email: dto.email },
+        select: {
+          id: true,
+          email: true,
+          password_hash: true,
+          status: true,
+        },
+      });
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (admin.status !== PlatformAdminStatus.active) {
+      throw new UnauthorizedException('Platform admin is suspended');
+    }
+
+    const passwordValid = await bcrypt.compare(
+      dto.password,
+      admin.password_hash,
+    );
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    await this.appendPlatformAudit({
+      actorId: admin.id,
+      action: 'platform.admin.logged-in',
+      targetType: 'platform_super_admin',
+      targetId: admin.id,
+    });
+
+    this.logger.info(
+      { platformAdminId: admin.id, email: admin.email },
+      'Platform admin logged in',
+    );
+
+    return {
+      accessToken: this.generatePlatformAccessToken(admin.id, admin.email),
+      admin: mapPlatformAuthAdmin(admin),
+    };
+  }
+
+  async logoutPlatform(adminId: string): Promise<void> {
+    await this.appendPlatformAudit({
+      actorId: adminId,
+      action: 'platform.admin.logged-out',
+      targetType: 'platform_super_admin',
+      targetId: adminId,
+    });
+
+    this.logger.info({ platformAdminId: adminId }, 'Platform admin logged out');
+  }
+
   // ----------------------------------------------------------------
   // Refresh tokens (rotation)
   // ----------------------------------------------------------------
@@ -291,7 +376,7 @@ export class AuthService {
   async validateUser(
     userId: string,
     companyId: string,
-  ): Promise<AuthenticatedUser | null> {
+  ): Promise<AuthenticatedTenantUser | null> {
     const user = await this.prisma.runWithTenant(companyId, async () => {
       return this.prisma.user.findFirst({
         where: { id: userId, is_active: true },
@@ -314,6 +399,123 @@ export class AuthService {
     };
   }
 
+  async validatePlatformAdmin(
+    adminId: string,
+  ): Promise<AuthenticatedPlatformAdmin | null> {
+    const admin = await this.prisma.runWithoutTenant(async () => {
+      return this.prisma.platformSuperAdmin.findFirst({
+        where: {
+          id: adminId,
+          status: PlatformAdminStatus.active,
+        },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+        },
+      });
+    });
+
+    if (!admin) return null;
+
+    return {
+      id: admin.id,
+      email: admin.email,
+      status: admin.status,
+      authType: 'platform',
+    };
+  }
+
+  async validateImpersonationSession(
+    adminId: string,
+    sessionId: string,
+    companyId: string,
+  ): Promise<TenantAuthenticatedUser | null> {
+    const session = await this.prisma.runWithoutTenant(async () => {
+      return this.prisma.platformImpersonationSession.findFirst({
+        where: {
+          id: sessionId,
+          super_admin_id: adminId,
+          target_company_id: companyId,
+          ended_at: null,
+          super_admin: {
+            status: PlatformAdminStatus.active,
+          },
+          company: {
+            status: CompanyStatus.active,
+          },
+        },
+        select: {
+          id: true,
+          super_admin: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+    });
+
+    if (!session) return null;
+
+    const tenantAdmin = await this.prisma.runWithTenant(companyId, async () => {
+      return this.prisma.user.findFirst({
+        where: {
+          role: UserRole.admin,
+          is_active: true,
+        },
+        orderBy: { created_at: 'asc' },
+        select: {
+          id: true,
+          email: true,
+          company_id: true,
+        },
+      });
+    });
+
+    if (!tenantAdmin) return null;
+
+    return {
+      id: tenantAdmin.id,
+      email: tenantAdmin.email,
+      role: UserRole.admin,
+      companyId: tenantAdmin.company_id,
+      authType: 'impersonation',
+      platformAdminId: session.super_admin.id,
+      platformAdminEmail: session.super_admin.email,
+      impersonationSessionId: session.id,
+    };
+  }
+
+  private async appendPlatformAudit(input: {
+    action: string;
+    actorId?: string | null;
+    targetType?: string | null;
+    targetId?: string | null;
+    companyId?: string | null;
+    metadata?: Record<string, unknown> | null;
+  }): Promise<void> {
+    await this.prisma.runWithoutTenant(async () => {
+      await this.prisma.platformAuditEvent.create({
+        data: {
+          actor_type: input.actorId
+            ? PlatformAuditActorType.super_admin
+            : PlatformAuditActorType.system,
+          actor_id: input.actorId ?? null,
+          action: input.action,
+          target_type: input.targetType ?? null,
+          target_id: input.targetId ?? null,
+          company_id: input.companyId ?? null,
+          metadata:
+            input.metadata === undefined || input.metadata === null
+              ? JSON_NULL
+              : (input.metadata as Prisma.InputJsonObject),
+        },
+      });
+    });
+  }
+
   // ----------------------------------------------------------------
   // Token generators
   // ----------------------------------------------------------------
@@ -330,6 +532,43 @@ export class AuthService {
       expiresIn: ACCESS_TOKEN_TTL,
     });
     return { accessToken };
+  }
+
+  private generatePlatformAccessToken(adminId: string, email: string): string {
+    const payload: JwtPayload = {
+      sub: adminId,
+      email,
+      type: 'platform',
+    };
+
+    return this.jwtService.sign(payload, {
+      secret: getAuthSecret(this.config, 'JWT_SECRET'),
+      expiresIn: PLATFORM_ACCESS_TOKEN_TTL,
+    });
+  }
+
+  generateImpersonationAccessToken(input: {
+    adminId: string;
+    companyId: string;
+    sessionId: string;
+  }): { accessToken: string; expiresAt: Date } {
+    const payload: JwtPayload = {
+      sub: input.adminId,
+      companyId: input.companyId,
+      sessionId: input.sessionId,
+      type: 'impersonation',
+    };
+    const expiresAt = new Date(
+      Date.now() + IMPERSONATION_ACCESS_TOKEN_MAX_AGE_MS,
+    );
+
+    return {
+      accessToken: this.jwtService.sign(payload, {
+        secret: getAuthSecret(this.config, 'JWT_SECRET'),
+        expiresIn: IMPERSONATION_ACCESS_TOKEN_TTL,
+      }),
+      expiresAt,
+    };
   }
 
   private generateRefreshToken(
@@ -364,5 +603,17 @@ function mapToAuthUser(user: {
     lastName: user.last_name,
     role: user.role as AuthUserDto['role'],
     companyId: user.company_id,
+  };
+}
+
+function mapPlatformAuthAdmin(admin: {
+  id: string;
+  email: string;
+  status: PlatformAdminStatus;
+}): PlatformAuthAdminDto {
+  return {
+    id: admin.id,
+    email: admin.email,
+    status: admin.status,
   };
 }

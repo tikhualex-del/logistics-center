@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 import type { Socket } from 'socket.io';
-import type { AuthenticatedUser } from './auth-request.types';
+import type { TenantAuthenticatedUser } from './auth-request.types';
 import { getAuthSecret } from './auth.config';
 import { AuthService, type JwtPayload } from './auth.service';
 
@@ -18,7 +18,7 @@ export class SocketAuthService {
   async authenticateSocket(
     client: Socket,
     allowedRoles?: readonly UserRole[],
-  ): Promise<AuthenticatedUser> {
+  ): Promise<TenantAuthenticatedUser> {
     const token = extractAccessToken(client);
     if (!token) {
       throw new Error('Missing access token');
@@ -27,6 +27,11 @@ export class SocketAuthService {
     const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
       secret: getAuthSecret(this.config, 'JWT_SECRET'),
     });
+
+    if (payload.type || !payload.companyId) {
+      throw new Error('Socket authentication requires a tenant user token');
+    }
+
     const user = await this.authService.validateUser(
       payload.sub,
       payload.companyId,

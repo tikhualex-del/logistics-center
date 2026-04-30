@@ -6,9 +6,14 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { PLATFORM_ROUTE_KEY } from '../../../common/decorators/platform-route.decorator';
 import { PUBLIC_ROUTE_KEY } from '../../../common/decorators/public.decorator';
 import { REQUIRE_PERMISSION_KEY } from '../../../common/decorators/require-permission.decorator';
-import type { AuthenticatedUser, RequestWithUser } from '../auth-request.types';
+import {
+  isTenantAuthenticatedUser,
+  type AuthenticatedUser,
+  type RequestWithUser,
+} from '../auth-request.types';
 import {
   hasPermission,
   type PermissionName,
@@ -32,6 +37,14 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
+    const isPlatformRoute = this.reflector.getAllAndOverride<boolean>(
+      PLATFORM_ROUTE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (isPlatformRoute) {
+      return true;
+    }
+
     const request = context
       .switchToHttp()
       .getRequest<RequestWithUser<AuthenticatedUser> & Request>();
@@ -48,7 +61,11 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const userRole = request.user?.role;
+    if (!isTenantAuthenticatedUser(request.user)) {
+      throw new ForbiddenException('Missing user role');
+    }
+
+    const userRole = request.user.role;
     if (!userRole) {
       throw new ForbiddenException('Missing user role');
     }

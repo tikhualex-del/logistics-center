@@ -12,6 +12,7 @@ import { SocketAuthService } from './socket-auth.service';
 import { TenantGuard } from './guards/tenant.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshStrategy } from './strategies/refresh.strategy';
+import { PlatformGuard } from '../platform/guards/platform.guard';
 
 @Module({
   imports: [
@@ -37,12 +38,14 @@ import { RefreshStrategy } from './strategies/refresh.strategy';
     RolesGuard,
     SocketAuthService,
     TenantGuard,
+    PlatformGuard,
   ],
   exports: [
     AuthService,
     JwtModule,
     JwtAuthGuard,
     PermissionsGuard,
+    PlatformGuard,
     RolesGuard,
     SocketAuthService,
     TenantGuard,

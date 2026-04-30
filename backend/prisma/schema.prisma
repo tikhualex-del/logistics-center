@@ -9,6 +9,15 @@ datasource db {
 model Company {
   id                     String                 @id @default(uuid())
   name                   String
+  slug                   String                 @unique
+  status                 CompanyStatus          @default(active)
+  timezone               String                 @default("UTC")
+  default_currency       String                 @default("RUB")
+  language               String                 @default("ru")
+  country                String                 @default("RU")
+  contact_email          String?
+  contact_phone          String?
+  plan_id                String?
   created_at             DateTime               @default(now())
   updated_at             DateTime               @updatedAt
   audit_logs             AuditLog[]
@@ -23,12 +32,62 @@ model Company {
   payment_recalculations PaymentRecalculation[]
   payment_rule_versions  PaymentRuleVersion[]
   payments               Payment[]
+  platform_audit_events  PlatformAuditEvent[]
+  platform_impersonation_sessions PlatformImpersonationSession[]
   route_points           RoutePoint[]
   routes                 Route[]
   users                  User[]
   zones                  Zone[]
 
   @@map("companies")
+}
+
+model PlatformSuperAdmin {
+  id                     String                         @id @default(uuid())
+  email                  String                         @unique
+  password_hash          String
+  status                 PlatformAdminStatus            @default(active)
+  created_at             DateTime                       @default(now())
+  updated_at             DateTime                       @updatedAt
+  audit_events           PlatformAuditEvent[]
+  impersonation_sessions PlatformImpersonationSession[]
+
+  @@map("platform_super_admins")
+}
+
+model PlatformImpersonationSession {
+  id                String             @id @default(uuid())
+  super_admin_id    String
+  target_company_id String
+  started_at        DateTime           @default(now())
+  ended_at          DateTime?
+  reason            String?
+  company           Company            @relation(fields: [target_company_id], references: [id])
+  super_admin       PlatformSuperAdmin @relation(fields: [super_admin_id], references: [id])
+
+  @@index([super_admin_id])
+  @@index([target_company_id])
+  @@index([super_admin_id, target_company_id, ended_at])
+  @@map("platform_impersonation_sessions")
+}
+
+model PlatformAuditEvent {
+  id           String                 @id @default(uuid())
+  actor_type   PlatformAuditActorType
+  actor_id     String?
+  action       String
+  target_type  String?
+  target_id    String?
+  company_id   String?
+  metadata     Json?
+  created_at   DateTime               @default(now())
+  actor        PlatformSuperAdmin?     @relation(fields: [actor_id], references: [id])
+  company      Company?               @relation(fields: [company_id], references: [id])
+
+  @@index([actor_id, created_at])
+  @@index([target_type, target_id])
+  @@index([company_id, created_at])
+  @@map("platform_audit_events")
 }
 
 model User {
@@ -416,6 +475,25 @@ enum UserRole {
   admin
   dispatcher
   courier
+}
+
+enum CompanyStatus {
+  active
+  inactive
+  suspended
+  trial
+  pending_setup
+  archived
+}
+
+enum PlatformAdminStatus {
+  active
+  suspended
+}
+
+enum PlatformAuditActorType {
+  super_admin
+  system
 }
 
 enum CourierStatus {

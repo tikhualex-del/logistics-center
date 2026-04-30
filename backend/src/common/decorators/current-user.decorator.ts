@@ -1,7 +1,16 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../modules/auth/auth-request.types';
 
-type CurrentUserKey = keyof AuthenticatedUser;
+type CurrentUserKey =
+  | 'authType'
+  | 'companyId'
+  | 'email'
+  | 'id'
+  | 'impersonationSessionId'
+  | 'platformAdminEmail'
+  | 'platformAdminId'
+  | 'role'
+  | 'status';
 
 export const CurrentUser = createParamDecorator(
   (data: CurrentUserKey | undefined, context: ExecutionContext) => {
@@ -14,6 +23,6 @@ export const CurrentUser = createParamDecorator(
       return user;
     }
 
-    return user?.[data];
+    return (user as Record<string, unknown> | undefined)?.[data];
   },
 );

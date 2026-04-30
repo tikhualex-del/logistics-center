@@ -7,9 +7,14 @@ import {
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@prisma/client';
 import type { Request } from 'express';
+import { PLATFORM_ROUTE_KEY } from '../../../common/decorators/platform-route.decorator';
 import { PUBLIC_ROUTE_KEY } from '../../../common/decorators/public.decorator';
 import { ROLES_KEY } from '../../../common/decorators/roles.decorator';
-import type { AuthenticatedUser, RequestWithUser } from '../auth-request.types';
+import {
+  isTenantAuthenticatedUser,
+  type AuthenticatedUser,
+  type RequestWithUser,
+} from '../auth-request.types';
 import { shouldBypassAccessGuards } from './auth-route-access';
 
 @Injectable()
@@ -26,6 +31,14 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
     if (isPublic) {
+      return true;
+    }
+
+    const isPlatformRoute = this.reflector.getAllAndOverride<boolean>(
+      PLATFORM_ROUTE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (isPlatformRoute) {
       return true;
     }
 
@@ -46,12 +59,11 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const userRole = request.user?.role;
-    if (!userRole) {
+    if (!isTenantAuthenticatedUser(request.user)) {
       throw new ForbiddenException('Missing user role');
     }
 
-    if (!requiredRoles.includes(userRole)) {
+    if (!requiredRoles.includes(request.user.role)) {
       throw new ForbiddenException('Insufficient role');
     }
 

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { buildUniqueSlug } from '../../common/utils/slug';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CompanyFeatureResponseDto } from './dto/company-feature-response.dto';
 import { CompanyResponseDto } from './dto/company-response.dto';
@@ -47,7 +48,7 @@ export class CompaniesService {
   async createCompany(name: string): Promise<CompanyResponseDto> {
     return await this.prisma.runWithoutTenant(async () => {
       const company = await this.prisma.company.create({
-        data: { name },
+        data: { name, slug: buildUniqueSlug(name) },
         select: companySelect,
       });
 

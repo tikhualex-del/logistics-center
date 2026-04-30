@@ -27,6 +27,7 @@ import { HealthModule } from './modules/health/health.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { PlatformModule } from './modules/platform';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { RoutingModule } from './modules/routing/routing.module';
 import { UsersModule } from './modules/users/users.module';
@@ -81,6 +82,7 @@ const backendEnvPath = isBackendCwd
     IntegrationsModule,
     NotificationsModule,
     OrdersModule,
+    PlatformModule,
     RealtimeModule,
     RoutingModule,
     UsersModule,

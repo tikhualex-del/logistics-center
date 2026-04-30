@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -18,10 +19,19 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PlatformRoute } from '../../common/decorators/platform-route.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import type { AuthenticatedUser, RequestWithUser } from './auth-request.types';
+import { PlatformGuard } from '../platform/guards/platform.guard';
+import type {
+  AuthenticatedPlatformAdmin,
+  AuthenticatedUser,
+  RequestWithUser,
+  TenantAuthenticatedUser,
+} from './auth-request.types';
 import { AuthService, type RefreshJwtPayload } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { PlatformLoginDto } from './dto/platform-login.dto';
+import { PlatformTokenResponseDto } from './dto/platform-token-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 
@@ -83,6 +93,52 @@ export class AuthController {
     return { accessToken, user };
   }
 
+  @Post('platform/login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Login as a platform super admin',
+    description:
+      'Authenticates a platform super admin and returns a platform-scoped access token.',
+  })
+  @ApiResponse({ status: 200, type: PlatformTokenResponseDto })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async platformLogin(
+    @Body() dto: PlatformLoginDto,
+  ): Promise<PlatformTokenResponseDto> {
+    return await this.authService.loginPlatform(dto);
+  }
+
+  @Post('platform/logout')
+  @PlatformRoute()
+  @UseGuards(PlatformGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('bearer')
+  @ApiOperation({
+    summary: 'Logout current platform super admin',
+    description: 'Writes a platform audit logout event.',
+  })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  async platformLogout(
+    @CurrentUser() admin: AuthenticatedPlatformAdmin,
+  ): Promise<{ message: string }> {
+    await this.authService.logoutPlatform(admin.id);
+    return { message: 'Logged out successfully' };
+  }
+
+  @Get('me')
+  @PlatformRoute()
+  @ApiBearerAuth('bearer')
+  @ApiOperation({
+    summary: 'Return the current auth context',
+    description:
+      'Returns tenant user, platform super-admin, or impersonation context based on the access token.',
+  })
+  @ApiResponse({ status: 200, description: 'Current auth context' })
+  getMe(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
+    return user;
+  }
+
   // ----------------------------------------------------------------
   // POST /api/v1/auth/refresh
   // ----------------------------------------------------------------
@@ -135,7 +191,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   async logout(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: TenantAuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
     await this.authService.logout(user.id, user.companyId, user.role);
