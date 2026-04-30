@@ -1,2 +1,0 @@
-export const DEFAULT_AT_RISK_WINDOW_MINUTES = 30
-export const DEFAULT_TIMEZONE = 'UTC'
