@@ -27,7 +27,7 @@ describe('JwtStrategy', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     strategy = new JwtStrategy(
-      mockConfigService as ConfigService,
+      mockConfigService as unknown as ConfigService,
       mockAuthService as unknown as AuthService,
     );
   });
