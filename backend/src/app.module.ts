@@ -23,6 +23,7 @@ import { TenantGuard } from './modules/auth/guards/tenant.guard';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { CompensationModule } from './modules/compensation/compensation.module';
 import { CouriersModule } from './modules/couriers/couriers.module';
+import { DispatchersModule } from './modules/dispatchers/dispatchers.module';
 import { HealthModule } from './modules/health/health.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -78,6 +79,7 @@ const backendEnvPath = isBackendCwd
     CompaniesModule,
     CompensationModule,
     CouriersModule,
+    DispatchersModule,
     HealthModule,
     IntegrationsModule,
     NotificationsModule,

@@ -1,6 +1,6 @@
 # Дашборд агентного runtime
 
-Обновлено: 29.4.2026 (ревизия плана Phase 11–13 после независимого аудита)
+Обновлено: 30.4.2026 (Phase 11.10: stub-модули MVP закрыты)
 
 ---
 
@@ -395,7 +395,7 @@ phase-6 ◄── phase-2 ──────────────────
 | A10 | Дубль prisma-схем (`apps/api/prisma/schema.prisma` ≠ `backend/prisma/schema.prisma`) — риск дрейфа | высоко | §10 migrations |
 | A11 | Нет E2E smoke-теста на полный flow (login → order → route → assign) | средне | §17 |
 | A12 | Sentry/error-tracking не подключён | низко | §14 observability |
-| A13 | Stub-папки `ai/analytics/dispatchers/kpi/schedules` пустые (не блок — это Phase 2 placeholder, но нужно явно подтвердить и оставить README) | низко | §15, §18 phase 2 |
+| A13 | Закрыто в 11.10: `dispatchers` получил минимальный `GET /dispatchers`, `ai/analytics/kpi` получили Phase 2 README, `schedules` явно вынесен в Phase 12.8 | закрыто | §15, §18 phase 2 |
 
 ### План — декомпозиция следующих шагов
 
@@ -414,7 +414,7 @@ phase-6 ◄── phase-2 ──────────────────
 | 11.6 | Удаление `apps/api`, `apps/web`, `apps/map` | backend-implementer | завершена | 11.3, 11.4, 11.5 | Отчёт: `.claude/agent-runtime/state/phase-11-11.6-remove-legacy-apps.md`. Удалены `apps/api`, `apps/web`, `apps/map`, untracked legacy artifacts (`apps/web/.next`, `node_modules`, build info) и пустой `apps/`. Дубли Prisma-схем удалены вместе с `apps/api/prisma`; единственный источник истины — `backend/prisma`. Root scripts остаются для 11.7 |
 | 11.7 | Корневой `package.json` — scripts | backend-implementer | завершена | 11.6 | Отчёт: `.claude/agent-runtime/state/phase-11-11.7-root-scripts.md`. Root scripts переведены на canonical `backend` + `frontend`: `dev` через `concurrently npm:dev:backend npm:dev:frontend`, `dev:backend`, `dev:frontend`, `lint`, `test`, `typecheck`, `build` и per-stack helpers. Legacy `dev:api`, `dev:map`, `npx serve` references удалены |
 | 11.9 | Обновление `README.md` с инструкциями запуска | backend-implementer | завершена | 11.7 | Отчёт: `.claude/agent-runtime/state/phase-11-11.9-readme-run-instructions.md`. README переписан под canonical stack: `npm run dev` (root) → backend `:3000` + frontend `:5173`, `/api/docs`, `/health`, `/health/ready`, требования Node/npm/Docker/Postgres/Redis, env-файлы root/backend/frontend. `.env.example` и `backend/.env.example` выровнены с docker-compose host port `5433` |
-| 11.10 | Stub-модули MVP: явное решение | backend-implementer | создана | 11.7 | Реализовать минимальный `dispatchers` модуль (controller `GET /dispatchers` для assignment dropdown) — §7 CLAUDE.md требует в MVP. В `ai/`, `analytics/`, `kpi/` положить `README.md` с пометкой "Phase 2 placeholder by design" вместо `.gitkeep`. `schedules` модуль вынесен в Phase 12.8 |
+| 11.10 | Stub-модули MVP: явное решение | backend-implementer | завершена | 11.7 | Отчёт: `.claude/agent-runtime/state/phase-11-11.10-stub-modules.md`. Добавлен минимальный `dispatchers` модуль с `GET /dispatchers` для assignment dropdown. В `ai/`, `analytics/`, `kpi/` README с пометкой "Phase 2 placeholder by design" вместо `.gitkeep`; `schedules` явно вынесен в Phase 12.8 |
 
 **Deliverable:** Один канонический стек, рутовый `npm run dev` поднимает backend+frontend, все изменения закоммичены, `apps/api`/`apps/web`/`apps/map` удалены, README актуален, минимальный `dispatchers` модуль работает.
 
@@ -524,7 +524,7 @@ phase-6 ◄── phase-2 ──────────────────
 - **R3.** Дубль prisma-схем (`apps/api`: 91 строка vs `backend`: 484 строки) — единственный источник истины `backend/prisma/schema.prisma`. Удаление apps/api устраняет дубль.
 - **R4.** Yandex API key в проде должен быть свой (не test-key) — задача в 10.2c.
 - **R5.** Адаптация Next.js → Vite (директивы `'use client'`, `next/router`, `next/link`, `next/image`, server actions). Без 11.4a (reference-pattern) миграция блоков легко превратится в копи-пасту с runtime-ошибками.
-- **R6.** §7 CLAUDE.md требует `dispatchers` и `schedules` модули в MVP, но обе папки сейчас содержат только `.gitkeep`. `dispatchers` минимум — в 11.10; `schedules` — Phase 12.8 (требует решения о включении в MVP).
+- **R6.** Закрыто в 11.10 для `dispatchers`: минимальный `GET /dispatchers` добавлен. `schedules` остаётся отдельным решением Phase 12.8 (включать ли смены в MVP).
 - **R7.** AI-панель мигрируется как UI-only (backend `ai/` остаётся placeholder). До решения о backend-источнике (mock `/ai/chat` vs реальный GigaChat) панель будет неработоспособна — нужно либо отключать через feature flag, либо мокать.
 - **R8.** Модуль `access` в apps/api может дублировать `auth` в backend. Окончательное решение (мигрировать или удалить) — по итогам 11.2.
 
