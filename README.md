@@ -1,63 +1,130 @@
 # Logistics Center
 
-SaaS platform for end-to-end logistics department management. Designed for small and medium businesses with their own delivery operations (5-50 couriers, 20-500 orders/day).
+SaaS platform for end-to-end logistics department management. Designed for
+small and medium businesses with their own delivery operations.
 
-For detailed project guidelines, architecture, and conventions, see [docs/CLAUDE.md](./docs/CLAUDE.md).
+For project rules, architecture, and conventions, see [CLAUDE.md](./CLAUDE.md).
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Backend | NestJS, TypeScript, Prisma, PostgreSQL, Redis, Socket.io |
-| Frontend | React 18, TypeScript, Vite, shadcn/ui, Tailwind CSS, Yandex Maps |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Yandex Maps |
 | Mobile | Expo, React Native (Phase 2) |
 | Infrastructure | Railway, Vercel, GitHub Actions |
 
-## Local Development
-
-### Prerequisites
+## Requirements
 
 - Node.js 22+
-- Docker + Docker Compose
 - npm 10+
+- Docker with Docker Compose
+- PostgreSQL 16 and Redis 7, usually started through `docker compose`
 
-### 1. Start the database and Redis
+## Environment
+
+Copy the example files before the first run:
 
 ```bash
-# Copy and configure environment variables
 cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
 
-# Start PostgreSQL 16 and Redis
-docker-compose up -d
+On Windows PowerShell, use `Copy-Item` instead of `cp`.
 
-2. Set up the backend
+Root `.env` is used by Docker Compose and is also loaded by the backend.
+`backend/.env` can override backend-only values. `frontend/.env` contains
+Vite variables and must use the `VITE_` prefix.
 
-cd backend
+Important local defaults:
 
-# Backend and Prisma read the root ../.env first.
-# backend/.env is optional and used only as a local fallback.
+| Variable | File | Default |
+|---|---|---|
+| `DATABASE_URL` | `.env`, `backend/.env` | `postgresql://postgres:password@localhost:5433/logistics_center?schema=public` |
+| `REDIS_URL` | `.env` | `redis://localhost:6379` |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | `.env`, `backend/.env` | replace before production |
+| `VITE_API_URL` | `frontend/.env` | `http://localhost:3000` |
+| `VITE_WS_URL` | `frontend/.env` | `http://localhost:3000` |
+| `VITE_YANDEX_MAPS_API_KEY` | `frontend/.env` | required for the dispatcher map |
 
-# Install dependencies
+`docker-compose.yml` publishes PostgreSQL on host port `5433` and Redis on
+host port `6379`.
+
+## Install
+
+Install root tooling and both application workspaces:
+
+```bash
 npm install
+cd backend && npm install
+cd ../frontend && npm install
+cd ..
+```
 
-# Generate Prisma client
+## Database
+
+Start PostgreSQL and Redis:
+
+```bash
+docker compose up -d
+```
+
+Prepare Prisma:
+
+```bash
+cd backend
 npx prisma generate
+npx prisma migrate deploy
+cd ..
+```
 
-# Run database migrations
-npx prisma migrate dev
+## Run
 
-# Start development server (http://localhost:3000)
-npm run start:dev
+Start the canonical development stack from the repository root:
 
-API documentation is available at: http://localhost:3000/api/docs
+```bash
+npm run dev
+```
 
-Documentation
+This starts:
 
-Project documentation is located in the docs/ directory:
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
 
-CLAUDE.md -- project rules and conventions
-FOUNDATION.md -- system overview
-COMPANIES_DOMAIN.md -- companies domain notes
-License
+Useful backend URLs:
+
+- Swagger UI: `http://localhost:3000/api/docs`
+- Liveness: `http://localhost:3000/health`
+- Readiness: `http://localhost:3000/health/ready`
+
+You can also start each side separately:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+```
+
+## Checks
+
+Root commands proxy to the canonical backend and frontend:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm test
+```
+
+Backend tests run with `jest --runInBand` from the root script to avoid worker
+spawn issues in restricted Windows shells.
+
+## Documentation
+
+- [CLAUDE.md](./CLAUDE.md) - project rules and conventions
+- [docs/FOUNDATION.md](./docs/FOUNDATION.md) - system overview
+- [docs/COMPANIES_DOMAIN.md](./docs/COMPANIES_DOMAIN.md) - companies domain notes
+
+## License
 
 Private. All rights reserved.
