@@ -39,8 +39,14 @@
     "collapseShort": "Свернуть",
     "brand": "Логистика",
     "map": "Карта",
+    "monitoring": "Мониторинг",
+    "orders": "Заказы",
+    "routes": "Маршруты",
     "couriers": "Курьеры",
+    "integrations": "Интеграции",
     "payments": "Выплаты",
+    "ai": "AI помощник",
+    "platform": "Платформа",
     "settings": "Настройки"
   },
   "roles": {

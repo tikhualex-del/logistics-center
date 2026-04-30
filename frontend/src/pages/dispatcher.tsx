@@ -7,6 +7,7 @@ import {
   MapView,
   OrderListPanel,
   RouteWorkspacePanel,
+  SelectedOrderOverlay,
   useDispatcherRealtime,
 } from '@/features/dispatcher'
 
@@ -122,14 +123,8 @@ export default function DispatcherPage(): React.ReactElement {
         )}
 
 
-        {/* Selected order indicator (bottom-right map overlay) */}
-        {selectedOrderId && (
-          <div className="absolute bottom-4 right-4 z-20">
-            <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded shadow-sm border border-yellow-200">
-              {t('pages.dispatcher.orderSelected')}
-            </span>
-          </div>
-        )}
+        {/* Selected order compact overlay migrated from legacy map UI */}
+        {selectedOrderId && <SelectedOrderOverlay />}
 
         <AiDispatcherPanel
           open={isAiPanelOpen}

@@ -6,8 +6,14 @@ import { ROUTES } from '@/lib'
 const LoginPage = lazy(() => import('@/features/auth/login-screen'))
 const RegisterPage = lazy(() => import('@/features/auth/register-screen'))
 const DispatcherPage = lazy(() => import('./dispatcher'))
+const MonitoringPage = lazy(() => import('./monitoring'))
+const OrdersPage = lazy(() => import('./orders'))
+const RoutesPage = lazy(() => import('./routes'))
 const CouriersPage = lazy(() => import('./couriers'))
+const IntegrationsPage = lazy(() => import('./integrations'))
 const PaymentsPage = lazy(() => import('./payments'))
+const AiAssistantPage = lazy(() => import('./ai-assistant'))
+const PlatformPage = lazy(() => import('./platform'))
 const SettingsPage = lazy(() => import('./settings'))
 const NotFoundPage = lazy(() => import('./not-found'))
 
@@ -68,11 +74,71 @@ export function AppRouter(): React.ReactElement {
             }
           />
           <Route
+            path={ROUTES.MONITORING}
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher']}>
+                <AppLayout>
+                  <MonitoringPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.ORDERS}
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher']}>
+                <AppLayout>
+                  <OrdersPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.ROUTES}
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher']}>
+                <AppLayout>
+                  <RoutesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.INTEGRATIONS}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AppLayout>
+                  <IntegrationsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path={ROUTES.PAYMENTS}
             element={
               <ProtectedRoute allowedRoles={['admin', 'courier']}>
                 <AppLayout>
                   <PaymentsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.AI_ASSISTANT}
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher']}>
+                <AppLayout>
+                  <AiAssistantPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.PLATFORM}
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AppLayout>
+                  <PlatformPage />
                 </AppLayout>
               </ProtectedRoute>
             }

@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import {
+  Activity,
+  Bot,
+  ClipboardList,
+  Route as RouteIcon,
+  ShieldCheck,
+  Webhook,
+} from 'lucide-react'
 import { usePermissions } from '@/hooks'
 import { useUiStore } from '@/store'
 import { ROUTES } from '@/lib/constants'
@@ -126,16 +134,52 @@ const NAV_ITEMS: NavItem[] = [
     icon: <IconMap />,
   },
   {
+    labelKey: 'nav.monitoring',
+    href: ROUTES.MONITORING,
+    requiredPermissions: ['view:operational-analytics', 'view:orders'],
+    icon: <Activity aria-hidden="true" />,
+  },
+  {
+    labelKey: 'nav.orders',
+    href: ROUTES.ORDERS,
+    requiredPermissions: ['view:orders'],
+    icon: <ClipboardList aria-hidden="true" />,
+  },
+  {
+    labelKey: 'nav.routes',
+    href: ROUTES.ROUTES,
+    requiredPermissions: ['build:routes', 'edit:routes'],
+    icon: <RouteIcon aria-hidden="true" />,
+  },
+  {
     labelKey: 'nav.couriers',
     href: ROUTES.COURIERS,
     requiredPermissions: ['manage:couriers'],
     icon: <IconUsers />,
   },
   {
+    labelKey: 'nav.integrations',
+    href: ROUTES.INTEGRATIONS,
+    requiredPermissions: ['connect:integrations'],
+    icon: <Webhook aria-hidden="true" />,
+  },
+  {
     labelKey: 'nav.payments',
     href: ROUTES.PAYMENTS,
     requiredPermissions: ['edit:payment-rules', 'view:own-earnings'],
     icon: <IconWallet />,
+  },
+  {
+    labelKey: 'nav.ai',
+    href: ROUTES.AI_ASSISTANT,
+    requiredPermissions: ['view:orders'],
+    icon: <Bot aria-hidden="true" />,
+  },
+  {
+    labelKey: 'nav.platform',
+    href: ROUTES.PLATFORM,
+    requiredPermissions: ['manage:users'],
+    icon: <ShieldCheck aria-hidden="true" />,
   },
   {
     labelKey: 'nav.settings',

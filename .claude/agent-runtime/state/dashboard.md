@@ -409,7 +409,7 @@ phase-6 ◄── phase-2 ──────────────────
 | 11.1 | Аудит уникальной ценности `apps/web` | reviewer | завершена | 11.3 | Сравнить блоки `apps/web/src/components/{monitoring,sla,orders,users,integrations,routes,platform,ai,map}` с `frontend/src/features/*`. Отчёт: `.claude/agent-runtime/state/phase-11-11.1-apps-web-audit.md`. Все 7 уникальных блоков мигрировать/явно waived в 11.4: monitoring/SLA, orders detail+history+actions, routes management, map advanced, integrations расширенные, platform admin, AI chat primitives |
 | 11.2 | Аудит `apps/api` vs `backend` | reviewer | завершена | 11.3 | Отчёт: `.claude/agent-runtime/state/phase-11-11.2-apps-api-audit.md`. `platform` и canonical `tenant-provisioning` мигрировать в 11.5; `access` не переносить отдельным модулем, только при необходимости встроить статусы в `users/auth` |
 | 11.4a | Next.js → Vite адаптационный pattern | frontend-implementer | завершена | 11.1 | Чек-лист: `.claude/agent-runtime/state/phase-11-11.4a-next-vite-pattern.md`. Reference-pattern реализован в `frontend/src/features/monitoring/monitoring-shell.tsx`: без `'use client'`, `react-router-dom Link`, canonical hooks/TanStack Query, i18n вместо mojibake, статусы выровнены с backend |
-| 11.4 | Миграция уникальных UI-фич из `apps/web` в `frontend/` | frontend-implementer | создана | 11.4a | По блокам в порядке приоритета: (1) monitoring/sla/orders detail/users — MVP-критичные; (2) routes management, integrations расширенные; (3) platform admin (companies, impersonation); (4) AI-панель (UI-only, без backend). Все компоненты должны использовать существующие `http-client.ts`, `socket-client.ts`, `useOrders/useCouriers/useRoutes` хуки |
+| 11.4 | Миграция уникальных UI-фич из `apps/web` в `frontend/` | frontend-implementer | завершена | 11.4a | Отчёт: `.claude/agent-runtime/state/phase-11-11.4-ui-migration.md`. Перенесены monitoring route, SLA widgets, orders workspace/detail/create/actions/history, routes management, integrations webhook workspace, selected-order map overlay, AI assistant UI-only, navigation/routes. Waived: users covered by settings/UserManagement; platform real wiring ждёт 11.5; integration logs ждут backend endpoint |
 | 11.5 | Миграция platform/super-admin из `apps/api` в backend | backend-implementer | создана | 11.2 | Создать `backend/src/modules/platform/` (CRUD companies на платформенном уровне, list, suspend, impersonation token) и `backend/src/modules/tenant-provisioning/` (создание company + admin + дефолтные настройки). По итогам 11.2: `access` не переносить отдельным модулем; platform-доступ закрыть отдельным guard/JWT-context, не tenant `permission-matrix.ts` |
 | 11.6 | Удаление `apps/api`, `apps/web`, `apps/map` | backend-implementer | создана | 11.3, 11.4, 11.5 | `git rm -r apps/api apps/web apps/map`. По решению пользователя `apps/map` тоже удаляется (Yandex Maps уже в каноническом frontend). После удаления проверить, что `apps/` пуста, и удалить саму папку. Удалить дубль prisma-схем |
 | 11.7 | Корневой `package.json` — scripts | backend-implementer | создана | 11.6 | Заменить scripts: `dev: concurrently npm:dev:backend npm:dev:frontend`, `dev:backend: cd backend && npm run start:dev`, `dev:frontend: cd frontend && npm run dev`. Корневые `lint`, `test`, `typecheck`, `build` проксируют в обе подпапки. Удалить `serve` и подобные dependency, оставшиеся от apps/map |
@@ -482,33 +482,55 @@ phase-6 ◄── phase-2 ──────────────────
 | 13.4 | Staging deploy + smoke | backend-implementer | создана | 10.2, 10.3 | Развернуть staging-инстанс, прогнать E2E из 12.6, отметить gaps |
 | 13.5 | Backup policy для Postgres | backend-implementer | создана | 10.2a | Railway daily snapshots + retention 7 дней; документировать процедуру restore |
 | 13.6 | Health-check мониторинг | backend-implementer | создана | 1.4 | Подключить uptime-проверку (UptimeRobot/healthchecks.io) на `/health/ready` |
+| 13.7 | Soft-delete cleanup job (опционально) | backend-implementer | обсуждается | 5.2 | Bull-задача / cron на физическое удаление `routes` с `deleted_at < now() - 90d`. Только для routes — payments/audit/integration_events остаются append-only навсегда. **Решение о включении — после первого пилота** |
+| 13.8 | Audit log retention (опционально) | backend-implementer | обсуждается | 3.5 | `audit_logs` растёт линейно. Стратегия: партиционирование по месяцам или архивирование в S3 cold storage. **Решение — после первого пилота**, когда виден реальный rate записей |
 
 **Deliverable:** Продакшн-установка готова к первому пилотному клиенту.
 
 ---
 
-### Сводка нового плана
+### Сводка нового плана (после ревизии 29.4.2026)
 
-| Фаза | Задач | Backend | Frontend | Reviewer | Статус |
-|------|-------|---------|----------|----------|--------|
-| Phase 11 (cleanup) | 9 | 5 | 1 | 2 | создана |
-| Phase 9 (доделать) | 5 | 0 | 5 | 0 | создана |
-| Phase 10 (CI/CD) | 10 | 7 | 3 | 0 | создана |
-| Phase 12 (MVP gaps) | 7 | 2 | 5 | 0 | создана |
-| Phase 13 (prod) | 6 | 5 | 1 | 0 | создана |
-| **Итого новых** | **37** | **19** | **15** | **2** | — |
+| Фаза | Задач | Backend | Frontend | Reviewer | Mixed | Статус |
+|------|-------|---------|----------|----------|-------|--------|
+| Phase 11 (cleanup) | 12 | 8 | 2 | 2 | 0 | создана |
+| Phase 9 (доделать) | 6 | 0 | 6 | 0 | 0 | создана |
+| Phase 10 (CI/CD) | 11 | 8 | 3 | 0 | 0 | создана |
+| Phase 12 (MVP gaps) | 8 | 2 | 5 | 0 | 1 | создана |
+| Phase 13 (prod) | 8 | 7 | 1 | 0 | 0 | создана (2 опц.) |
+| **Итого новых** | **45** | **25** | **17** | **2** | **1** | — |
 
-### Рекомендованный порядок исполнения
+### Рекомендованный порядок исполнения (детализирован)
 
-1. **Phase 11 целиком** (без неё CI и любые новые фичи опасны — будут пересекаться два стека).
-2. **Phase 9 доделать** (быстрый win, защищает frontend от регрессий после 11.4).
-3. **Phase 10** (без CI Phase 12/13 нельзя безопасно деплоить).
-4. **Phase 12** (закрывает MVP-разрыв для диспетчера).
-5. **Phase 13** (готовим прод).
+1. **11.8a** (зелёный билд backend: lint + tsc + test) — **самый первый шаг**, без него любой следующий рискует зафиксировать сломанный код.
+2. **11.8b** (серия коммитов 140 файлов по доменам).
+3. **11.3** (создать `legacy/apps-stack` ветку, push в origin).
+4. **11.1 + 11.2** (детальная инвентаризация — параллельно reviewer-агентом).
+5. **11.4a** (Next.js → Vite адаптационный pattern на одном компоненте).
+6. **11.4** (миграция UI блоками: monitoring/sla/orders → routes/integrations/users → platform/AI).
+7. **11.5** (миграция backend `platform`/`tenant-provisioning`, решение по `access`).
+8. **11.6** (`git rm -r apps/api apps/web apps/map`, удалить пустую `apps/`).
+9. **11.7 + 11.9** (root scripts + README).
+10. **11.10** (stub-модули MVP: минимальный `dispatchers`, README в `ai/analytics/kpi`).
+11. **9.2b–9.2g** (frontend tests, включая smoke на мигрированном).
+12. **10.x** (CI/CD: lint → test → build → deploy).
+13. **12.x** (MVP gaps; 12.8 schedules — отдельное решение).
+14. **13.x** (production readiness; 13.7/13.8 — после первого пилота).
 
-### Риски
+### Риски (после ревизии 29.4.2026)
 
-- **R1.** Удаление `apps/web` без 11.4 потеряет UX-фичи (monitoring, SLA, order create) → 11.4 обязателен **до** 11.6.
-- **R2.** 139 незакоммиченных файлов могут содержать незавершённую работу — 11.8 надо сделать раньше любых rm/restructure.
-- **R3.** Дубль prisma-схем (`apps/api` vs `backend`) — `apps/api/prisma/schema.prisma` короче (91 строка) и старее; единственный источник истины — `backend/prisma/schema.prisma`. Удаление apps/api устраняет дубль.
-- **R4.** Yandex API key в проде должен быть свой (не test-key) — отдельная задача в 10.2c.
+- **R1.** Удаление `apps/web` без 11.4 потеряет UX-фичи (monitoring, SLA, order create, AI, platform) → 11.4 обязателен **до** 11.6. Все 7 уникальных блоков мигрируются (по решению пользователя).
+- **R2.** 140 незакоммиченных файлов (94 backend / 27 frontend / 9 apps / 2 .claude) могут содержать сломанный код — 11.8a (зелёный билд) обязателен **до** 11.8b (коммита).
+- **R3.** Дубль prisma-схем (`apps/api`: 91 строка vs `backend`: 484 строки) — единственный источник истины `backend/prisma/schema.prisma`. Удаление apps/api устраняет дубль.
+- **R4.** Yandex API key в проде должен быть свой (не test-key) — задача в 10.2c.
+- **R5.** Адаптация Next.js → Vite (директивы `'use client'`, `next/router`, `next/link`, `next/image`, server actions). Без 11.4a (reference-pattern) миграция блоков легко превратится в копи-пасту с runtime-ошибками.
+- **R6.** §7 CLAUDE.md требует `dispatchers` и `schedules` модули в MVP, но обе папки сейчас содержат только `.gitkeep`. `dispatchers` минимум — в 11.10; `schedules` — Phase 12.8 (требует решения о включении в MVP).
+- **R7.** AI-панель мигрируется как UI-only (backend `ai/` остаётся placeholder). До решения о backend-источнике (mock `/ai/chat` vs реальный GigaChat) панель будет неработоспособна — нужно либо отключать через feature flag, либо мокать.
+- **R8.** Модуль `access` в apps/api может дублировать `auth` в backend. Окончательное решение (мигрировать или удалить) — по итогам 11.2.
+
+### Открытые вопросы (требуют решения отдельно)
+
+- **Phase 12.8 (schedules/смены)**: включаем в MVP или Phase 2? §7 CLAUDE.md требует, но это +backend-модуль и +UI.
+- **Phase 13.7/13.8 (retention)**: делать сейчас или после первого пилота? Пока заморожены до пилота.
+- **Backend для AI-панели**: mock `/ai/chat` или реальный GigaChat? Это отдельная Phase 2 задача.
+- **`access` модуль**: судьба определяется по итогам 11.2.
