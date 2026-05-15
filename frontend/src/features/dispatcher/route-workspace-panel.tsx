@@ -969,7 +969,6 @@ function RouteDetailColumn({
     draftCourierId,
     hasCourierChanges,
     hasPointChanges,
-    initialCourierId,
     onRouteUpdated,
     onSelectRoute,
     queryClient,
