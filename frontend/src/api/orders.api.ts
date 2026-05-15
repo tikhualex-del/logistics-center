@@ -47,6 +47,32 @@ export interface OrderFilters {
   status?: OrderStatus
   zoneId?: string
   date?: string
+  search?: string
+  timeWindowFrom?: string
+  timeWindowTo?: string
+}
+
+export interface OrderFilterInput {
+  status?: OrderStatus | null
+  zoneId?: string | null
+  date?: string | null
+  search?: string | null
+  timeWindowFrom?: string | null
+  timeWindowTo?: string | null
+}
+
+export function buildOrderFilters(input: OrderFilterInput): OrderFilters {
+  const filters: OrderFilters = {}
+  const search = input.search?.trim()
+
+  if (input.date) filters.date = input.date
+  if (input.status) filters.status = input.status
+  if (input.zoneId) filters.zoneId = input.zoneId
+  if (search) filters.search = search
+  if (input.timeWindowFrom) filters.timeWindowFrom = input.timeWindowFrom
+  if (input.timeWindowTo) filters.timeWindowTo = input.timeWindowTo
+
+  return filters
 }
 
 export interface CreateOrderDto {

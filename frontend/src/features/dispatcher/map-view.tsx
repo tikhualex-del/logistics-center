@@ -9,10 +9,7 @@ import {
   useZones,
 } from '@/hooks'
 import { YANDEX_MAPS_API_KEY } from '@/lib/constants'
-import {
-  orderMatchesSearch,
-  orderMatchesTimeRange,
-} from '@/lib/order-utils'
+import { buildOrderFilters } from '@/api'
 import type { RoutePreview } from '@/store'
 import { useUiStore } from '@/store'
 import {
@@ -59,13 +56,18 @@ export function MapView(): React.ReactElement {
   const setSelectedCourierId = useUiStore((state) => state.setSelectedCourierId)
   const setSelectedRouteId = useUiStore((state) => state.setSelectedRouteId)
 
-  const { data: orders = [] } = useOrders(
-    {
-      date: selectedDate,
-      status: statusFilter ?? undefined,
-    },
-    { enabled: mapEnabled },
+  const orderFilters = useMemo(
+    () =>
+      buildOrderFilters({
+        date: selectedDate,
+        status: statusFilter,
+        search: searchQuery,
+        timeWindowFrom: startTimeFilter,
+        timeWindowTo: endTimeFilter,
+      }),
+    [endTimeFilter, searchQuery, selectedDate, startTimeFilter, statusFilter],
   )
+  const { data: orders = [] } = useOrders(orderFilters, { enabled: mapEnabled })
   const { data: zones = [] } = useZones({ enabled: mapEnabled })
   const { data: routes = [] } = useRoutes(
     { date: selectedDate },
@@ -156,20 +158,7 @@ export function MapView(): React.ReactElement {
     enabled: mapEnabled && showCouriers,
   })
 
-  const visibleOrders = useMemo(
-    () =>
-      orders.filter((order) => {
-        const matchesSearch = orderMatchesSearch(order, searchQuery)
-        const matchesTimeRange = orderMatchesTimeRange(
-          order,
-          startTimeFilter,
-          endTimeFilter,
-        )
-
-        return matchesSearch && matchesTimeRange
-      }),
-    [orders, searchQuery, startTimeFilter, endTimeFilter],
-  )
+  const visibleOrders = orders
 
   useOrderMarkers(
     mapInstance,

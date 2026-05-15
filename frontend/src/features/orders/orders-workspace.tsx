@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactElement } from 'react'
+import { useState, type FormEvent, type ReactElement } from 'react'
 import {
   CheckCircle2,
   FileClock,
@@ -6,7 +6,12 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react'
-import type { CreateOrderDto, Order, OrderStatus } from '@/api'
+import {
+  buildOrderFilters,
+  type CreateOrderDto,
+  type Order,
+  type OrderStatus,
+} from '@/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,10 +66,17 @@ export function OrdersWorkspace(): ReactElement {
   const selectedDate = useUiStore((state) => state.selectedDate)
   const searchQuery = useUiStore((state) => state.searchQuery)
   const statusFilter = useUiStore((state) => state.statusFilter)
-  const ordersQuery = useOrders({
-    date: selectedDate,
-    status: statusFilter ?? undefined,
-  })
+  const startTimeFilter = useUiStore((state) => state.startTimeFilter)
+  const endTimeFilter = useUiStore((state) => state.endTimeFilter)
+  const ordersQuery = useOrders(
+    buildOrderFilters({
+      date: selectedDate,
+      status: statusFilter,
+      search: searchQuery,
+      timeWindowFrom: startTimeFilter,
+      timeWindowTo: endTimeFilter,
+    }),
+  )
   const createOrderMutation = useCreateOrder()
   const updateStatusMutation = useUpdateOrderStatus()
   const { can } = usePermissions()
@@ -74,10 +86,7 @@ export function OrdersWorkspace(): ReactElement {
   const [form, setForm] = useState<OrderFormState>(EMPTY_ORDER_FORM)
 
   const orders = ordersQuery.data ?? EMPTY_ORDERS
-  const visibleOrders = useMemo(
-    () => filterOrders(orders, searchQuery),
-    [orders, searchQuery],
-  )
+  const visibleOrders = orders
   const selectedOrder =
     visibleOrders.find((order) => order.id === selectedOrderId) ??
     visibleOrders[0] ??
@@ -487,26 +496,6 @@ function DetailRow({
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-1 text-foreground">{value}</dd>
     </div>
-  )
-}
-
-function filterOrders(
-  orders: readonly Order[],
-  searchQuery: string,
-): Order[] {
-  const normalized = searchQuery.trim().toLowerCase()
-  if (!normalized) return [...orders]
-
-  return orders.filter((order) =>
-    [
-      order.orderNumber,
-      order.externalId,
-      order.customerName,
-      order.customerPhone,
-      order.deliveryAddress,
-    ]
-      .filter(Boolean)
-      .some((value) => value?.toLowerCase().includes(normalized)),
   )
 }
 

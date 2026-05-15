@@ -1,16 +1,17 @@
 import { isAxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
+import {
+  buildOrderFilters,
+  type Order,
+  type OrderStatus,
+  type Route,
+} from '@/api'
 import i18n from '@/i18n'
 import { QUERY_KEYS } from '@/api/query-keys'
 import type { ApiError } from '@/api/http-client'
-import type { Order, OrderStatus, Route } from '@/api'
 import { useBuildRoutes, useOrders } from '@/hooks'
-import {
-  getOrderDisplayId,
-  orderMatchesSearch,
-  orderMatchesTimeRange,
-} from '@/lib/order-utils'
+import { getOrderDisplayId } from '@/lib/order-utils'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/store'
 
@@ -41,23 +42,19 @@ export function RouteBuildControls(): React.ReactElement {
     isLoading,
     isError,
     refetch,
-  } = useOrders({
-    date: selectedDate,
-    status: statusFilter ?? undefined,
-  })
+  } = useOrders(
+    buildOrderFilters({
+      date: selectedDate,
+      status: statusFilter,
+      search: searchQuery,
+      timeWindowFrom: startTimeFilter,
+      timeWindowTo: endTimeFilter,
+    }),
+  )
   const buildRouteMutation = useBuildRoutes()
 
   const routeOrders = prioritizeSelectedOrder(
-    orders.filter((order) => {
-      const matchesSearch = orderMatchesSearch(order, searchQuery)
-      const matchesTimeRange = orderMatchesTimeRange(
-        order,
-        startTimeFilter,
-        endTimeFilter,
-      )
-
-      return matchesSearch && matchesTimeRange && isRoutableOrder(order)
-    }),
+    orders.filter(isRoutableOrder),
     selectedOrderId,
   )
   const orderIds = routeOrders.map((order) => order.id)

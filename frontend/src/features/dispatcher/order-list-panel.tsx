@@ -3,15 +3,16 @@ import { isAxiosError } from 'axios'
 import { Route as RouteIcon } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import {
+  buildOrderFilters,
+  type Order,
+  type OrderStatus,
+  type Route,
+} from '@/api'
 import { QUERY_KEYS } from '@/api/query-keys'
 import type { ApiError } from '@/api/http-client'
-import type { Order, OrderStatus, Route } from '@/api'
 import { useBuildRoutes, useOrders } from '@/hooks'
 import { useUiStore } from '@/store'
-import {
-  orderMatchesSearch,
-  orderMatchesTimeRange,
-} from '@/lib/order-utils'
 import { OrderCard } from './order-card'
 
 const ROUTABLE_STATUSES: readonly OrderStatus[] = [
@@ -64,25 +65,19 @@ export function OrderListPanel({
   } = useUiStore()
   const buildRouteMutation = useBuildRoutes()
 
-  const { data, isLoading, isError, refetch } = useOrders({
-    date: selectedDate,
-    status: statusFilter ?? undefined,
-  })
-
-  const visibleOrders = useMemo(() => {
-    const orders = data ?? []
-
-    return orders.filter((order) => {
-      const matchesSearch = orderMatchesSearch(order, searchQuery)
-      const matchesTimeRange = orderMatchesTimeRange(
-        order,
-        startTimeFilter,
-        endTimeFilter,
-      )
-
-      return matchesSearch && matchesTimeRange
-    })
-  }, [data, searchQuery, startTimeFilter, endTimeFilter])
+  const orderFilters = useMemo(
+    () =>
+      buildOrderFilters({
+        date: selectedDate,
+        status: statusFilter,
+        search: searchQuery,
+        timeWindowFrom: startTimeFilter,
+        timeWindowTo: endTimeFilter,
+      }),
+    [endTimeFilter, searchQuery, selectedDate, startTimeFilter, statusFilter],
+  )
+  const { data, isLoading, isError, refetch } = useOrders(orderFilters)
+  const visibleOrders = useMemo(() => data ?? [], [data])
 
   const selectedOrderIdSet = useMemo(
     () => new Set(selectedOrderIds),

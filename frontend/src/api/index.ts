@@ -36,11 +36,13 @@ export {
   createOrder,
   updateOrder,
   updateOrderStatus,
+  buildOrderFilters,
 } from './orders.api'
 export type {
   Order,
   OrderStatus,
   OrderFilters,
+  OrderFilterInput,
   CreateOrderDto,
   UpdateOrderDto,
   UpdateOrderStatusDto,
