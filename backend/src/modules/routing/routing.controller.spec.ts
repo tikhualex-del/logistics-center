@@ -1,5 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { RouteStatus } from '@prisma/client';
+import { AuditActorRole, RouteStatus } from '@prisma/client';
 import { RoutingController } from './routing.controller';
 import { RoutingService } from './routing.service';
 
@@ -56,12 +56,18 @@ describe('RoutingController', () => {
     mockRoutingService.buildRoute.mockResolvedValue(routeResponse);
 
     await expect(
-      controller.buildRoute('company-1', 'user-1', dto),
+      controller.buildRoute(
+        'company-1',
+        'user-1',
+        AuditActorRole.dispatcher,
+        dto,
+      ),
     ).resolves.toEqual(routeResponse);
     expect(mockRoutingService.buildRoute).toHaveBeenCalledWith(
       'company-1',
       'user-1',
       dto,
+      AuditActorRole.dispatcher,
     );
   });
 
@@ -107,13 +113,20 @@ describe('RoutingController', () => {
     mockRoutingService.updateRoute.mockResolvedValue(updatedRoute);
 
     await expect(
-      controller.updateRoute('company-1', 'user-1', 'route-1', dto),
+      controller.updateRoute(
+        'company-1',
+        'user-1',
+        AuditActorRole.dispatcher,
+        'route-1',
+        dto,
+      ),
     ).resolves.toEqual(updatedRoute);
     expect(mockRoutingService.updateRoute).toHaveBeenCalledWith(
       'company-1',
       'user-1',
       'route-1',
       dto,
+      AuditActorRole.dispatcher,
     );
   });
 

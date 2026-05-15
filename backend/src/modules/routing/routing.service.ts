@@ -6,12 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Prisma, RouteStatus, type OrderStatus } from '@prisma/client';
+import { AuditActorRole, OrderStatus, Prisma, RouteStatus } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { stringifyUnknown } from '../../common/utils/stringify-unknown';
 import { getTenantContextRequestId } from '../../prisma/tenant-context.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { canTransition } from '../orders/order-state-machine';
+import type { OrderStatusChangedEvent } from '../orders/orders.events';
 import { BuildRouteDto } from './dto/build-route.dto';
 import { ListRoutesQueryDto } from './dto/list-routes.query.dto';
 import { RoutePointResponseDto } from './dto/route-point-response.dto';
@@ -41,10 +43,10 @@ const ACTIVE_ROUTE_STATUSES = [
   RouteStatus.in_progress,
 ] as const;
 const TERMINAL_ORDER_STATUSES = new Set<OrderStatus>([
-  'delivered',
-  'undelivered',
-  'returned',
-  'cancelled',
+  OrderStatus.delivered,
+  OrderStatus.undelivered,
+  OrderStatus.returned,
+  OrderStatus.cancelled,
 ]);
 
 const orderForRouteSelect = {
@@ -58,6 +60,30 @@ const orderForRouteSelect = {
   scheduled_date: true,
   zone_id: true,
   assigned_courier_id: true,
+} satisfies Prisma.OrderSelect;
+
+const orderForAssignmentSelect = {
+  id: true,
+  company_id: true,
+  status: true,
+  external_id: true,
+  order_number: true,
+  customer_name: true,
+  customer_phone: true,
+  delivery_address: true,
+  delivery_latitude: true,
+  delivery_longitude: true,
+  comment: true,
+  scheduled_date: true,
+  time_window_from: true,
+  time_window_to: true,
+  zone_id: true,
+  assigned_courier_id: true,
+  created_by_user_id: true,
+  assigned_by_user_id: true,
+  metadata: true,
+  created_at: true,
+  updated_at: true,
 } satisfies Prisma.OrderSelect;
 
 const routePointSelect = {
@@ -104,6 +130,9 @@ type RouteOrderRecord = Prisma.OrderGetPayload<{
 type RouteCourierRecord = Prisma.CourierGetPayload<{
   select: typeof courierForRouteSelect;
 }>;
+type OrderAssignmentRecord = Prisma.OrderGetPayload<{
+  select: typeof orderForAssignmentSelect;
+}>;
 
 @Injectable()
 export class RoutingService {
@@ -121,6 +150,7 @@ export class RoutingService {
     companyId: string,
     actorUserId: string,
     dto: BuildRouteDto,
+    actorRole: AuditActorRole = AuditActorRole.system,
   ): Promise<RouteResponseDto> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const options = buildProviderOptions(dto);
@@ -135,7 +165,7 @@ export class RoutingService {
         options,
       );
 
-      const routeRecord = await this.prisma.$transaction(async (tx) => {
+      const routeBuildResult = await this.prisma.$transaction(async (tx) => {
         const createdRoute = await tx.route.create({
           data: {
             company_id: companyId,
@@ -162,6 +192,17 @@ export class RoutingService {
           ),
         });
 
+        const orderStatusChangedEvents =
+          await this.syncRouteOrdersWithCourier({
+            tx,
+            companyId,
+            actorUserId,
+            actorRole,
+            routeId: createdRoute.id,
+            courierId: dto.courierId ?? null,
+            orders: resolvedPlan.orders,
+          });
+
         const savedRoute = await tx.route.findFirst({
           where: {
             id: createdRoute.id,
@@ -174,12 +215,15 @@ export class RoutingService {
           throw new NotFoundException('Route not found after creation');
         }
 
-        return savedRoute;
+        return {
+          route: savedRoute,
+          orderStatusChangedEvents,
+        };
       });
 
       this.logger.info(
         {
-          routeId: routeRecord.id,
+          routeId: routeBuildResult.route.id,
           companyId,
           createdByUserId: actorUserId,
           courierId: dto.courierId ?? null,
@@ -187,7 +231,7 @@ export class RoutingService {
         'Route built',
       );
 
-      const route = mapRoute(routeRecord);
+      const route = mapRoute(routeBuildResult.route);
 
       await this.emitRouteBuilt({
         routeId: route.id,
@@ -196,6 +240,9 @@ export class RoutingService {
         requestId: getTenantContextRequestId() ?? null,
         route,
       });
+      await this.emitOrderStatusChangedEvents(
+        routeBuildResult.orderStatusChangedEvents,
+      );
 
       return route;
     });
@@ -283,6 +330,7 @@ export class RoutingService {
     actorUserId: string,
     routeId: string,
     dto: UpdateRouteDto,
+    actorRole: AuditActorRole = AuditActorRole.system,
   ): Promise<RouteResponseDto> {
     return await this.prisma.runWithTenant(companyId, async () => {
       const currentRoute = await this.prisma.route.findFirst({
@@ -327,6 +375,7 @@ export class RoutingService {
       }
 
       let updatedRoute: RouteRecord;
+      let orderStatusChangedEvents: OrderStatusChangedEvent[] = [];
 
       if (hasRoutePlanChangesFlag) {
         const currentOptions = extractStoredRouteOptions(
@@ -383,6 +432,16 @@ export class RoutingService {
               resolvedPlan.orders,
               routeResult,
             ),
+          });
+
+          orderStatusChangedEvents = await this.syncRouteOrdersWithCourier({
+            tx,
+            companyId,
+            actorUserId,
+            actorRole,
+            routeId,
+            courierId: nextCourierId ?? null,
+            orders: resolvedPlan.orders,
           });
 
           const savedRoute = await tx.route.findFirst({
@@ -456,6 +515,7 @@ export class RoutingService {
           route,
         });
       }
+      await this.emitOrderStatusChangedEvents(orderStatusChangedEvents);
 
       return route;
     });
@@ -674,6 +734,111 @@ export class RoutingService {
     return courier;
   }
 
+  private async syncRouteOrdersWithCourier({
+    tx,
+    companyId,
+    actorUserId,
+    actorRole,
+    routeId,
+    courierId,
+    orders,
+  }: {
+    tx: Prisma.TransactionClient;
+    companyId: string;
+    actorUserId: string;
+    actorRole: AuditActorRole;
+    routeId: string;
+    courierId: string | null;
+    orders: RouteOrderRecord[];
+  }): Promise<OrderStatusChangedEvent[]> {
+    if (!courierId) {
+      return [];
+    }
+
+    const statusChangedEvents: OrderStatusChangedEvent[] = [];
+
+    for (const order of orders) {
+      if (order.company_id !== companyId) {
+        throw new NotFoundException(`Order ${order.id} not found`);
+      }
+
+      if (TERMINAL_ORDER_STATUSES.has(order.status)) {
+        continue;
+      }
+
+      const shouldTransitionToAssigned =
+        order.status !== OrderStatus.assigned &&
+        canTransition(order.status, OrderStatus.assigned);
+      const updatedOrder = await tx.order.update({
+        where: { id: order.id },
+        data: {
+          assigned_courier_id: courierId,
+          assigned_by_user_id: actorUserId,
+          ...(shouldTransitionToAssigned ? { status: OrderStatus.assigned } : {}),
+        },
+        select: orderForAssignmentSelect,
+      });
+
+      if (!shouldTransitionToAssigned) {
+        continue;
+      }
+
+      const metadata = {
+        source: 'route.assignment',
+        routeId,
+        courierId,
+      } satisfies Prisma.InputJsonObject;
+
+      await tx.orderStatusHistory.create({
+        data: {
+          company_id: companyId,
+          order_id: order.id,
+          from_status: order.status,
+          to_status: OrderStatus.assigned,
+          changed_by_user_id: actorUserId,
+          reason: 'Assigned to route courier',
+          metadata,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          company_id: companyId,
+          actor_id: actorUserId,
+          actor_role: actorRole,
+          action: DOMAIN_EVENTS.ORDER.STATUS_CHANGED,
+          entity_type: 'order',
+          entity_id: order.id,
+          request_id: getTenantContextRequestId() ?? null,
+          before: {
+            status: order.status,
+            assignedCourierId: order.assigned_courier_id,
+          },
+          after: {
+            status: OrderStatus.assigned,
+            assignedCourierId: courierId,
+            reason: 'Assigned to route courier',
+          },
+          metadata,
+        },
+      });
+
+      statusChangedEvents.push({
+        orderId: updatedOrder.id,
+        companyId,
+        actorUserId,
+        actorRole,
+        fromStatus: order.status,
+        toStatus: OrderStatus.assigned,
+        reason: 'Assigned to route courier',
+        requestId: getTenantContextRequestId() ?? null,
+        order: mapOrderForStatusEvent(updatedOrder),
+      });
+    }
+
+    return statusChangedEvents;
+  }
+
   private async emitRouteBuilt(payload: RouteBuiltEvent): Promise<void> {
     try {
       await this.eventEmitter.emitAsync(DOMAIN_EVENTS.ROUTE.BUILT, payload);
@@ -725,6 +890,30 @@ export class RoutingService {
         },
         'Route cancelled event emission failed',
       );
+    }
+  }
+
+  private async emitOrderStatusChangedEvents(
+    events: OrderStatusChangedEvent[],
+  ): Promise<void> {
+    for (const event of events) {
+      try {
+        await this.eventEmitter.emitAsync(
+          DOMAIN_EVENTS.ORDER.STATUS_CHANGED,
+          event,
+        );
+      } catch (error) {
+        this.logger.warn(
+          {
+            orderId: event.orderId,
+            companyId: event.companyId,
+            fromStatus: event.fromStatus,
+            toStatus: event.toStatus,
+            error,
+          },
+          'Order status-changed event emission failed',
+        );
+      }
     }
   }
 }
@@ -802,6 +991,34 @@ function mapRoutePoint(
     orderStatus: point.order.status,
     scheduledDate: point.order.scheduled_date,
     zoneId: point.order.zone_id,
+  };
+}
+
+function mapOrderForStatusEvent(order: OrderAssignmentRecord) {
+  return {
+    id: order.id,
+    companyId: order.company_id,
+    status: order.status,
+    externalId: order.external_id,
+    orderNumber: order.order_number,
+    customerName: order.customer_name,
+    customerPhone: order.customer_phone,
+    deliveryAddress: order.delivery_address,
+    deliveryLatitude: decimalToNumber(order.delivery_latitude),
+    deliveryLongitude: decimalToNumber(order.delivery_longitude),
+    comment: order.comment,
+    scheduledDate: order.scheduled_date,
+    timeWindowFrom: order.time_window_from,
+    timeWindowTo: order.time_window_to,
+    zoneId: order.zone_id,
+    assignedCourierId: order.assigned_courier_id,
+    createdByUserId: order.created_by_user_id,
+    assignedByUserId: order.assigned_by_user_id,
+    metadata: isPlainObject(order.metadata)
+      ? (order.metadata as Record<string, unknown>)
+      : null,
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
   };
 }
 

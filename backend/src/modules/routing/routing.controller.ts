@@ -15,7 +15,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { UserRole, type AuditActorRole } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -39,9 +39,15 @@ export class RoutingController {
   async buildRoute(
     @CurrentUser('companyId') companyId: string,
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') actorRole: AuditActorRole,
     @Body() dto: BuildRouteDto,
   ): Promise<RouteResponseDto> {
-    return await this.routingService.buildRoute(companyId, userId, dto);
+    return await this.routingService.buildRoute(
+      companyId,
+      userId,
+      dto,
+      actorRole,
+    );
   }
 
   @Post('preview')
@@ -80,6 +86,7 @@ export class RoutingController {
   async updateRoute(
     @CurrentUser('companyId') companyId: string,
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') actorRole: AuditActorRole,
     @Param('id', new ParseUUIDPipe()) routeId: string,
     @Body() dto: UpdateRouteDto,
   ): Promise<RouteResponseDto> {
@@ -88,6 +95,7 @@ export class RoutingController {
       userId,
       routeId,
       dto,
+      actorRole,
     );
   }
 

@@ -1,7 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Prisma, RouteStatus } from '@prisma/client';
+import { AuditActorRole, OrderStatus, Prisma, RouteStatus } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -32,6 +32,15 @@ const mockTransactionClient = {
     create: jest.fn(),
     update: jest.fn(),
     findFirst: jest.fn(),
+  },
+  order: {
+    update: jest.fn(),
+  },
+  orderStatusHistory: {
+    create: jest.fn(),
+  },
+  auditLog: {
+    create: jest.fn(),
   },
   routePoint: {
     createMany: jest.fn(),
@@ -65,7 +74,7 @@ const baseOrders = [
   {
     id: 'order-1',
     company_id: 'company-1',
-    status: 'confirmed',
+    status: OrderStatus.confirmed,
     customer_name: 'Alice',
     delivery_address: 'Moscow, Tverskaya 1',
     delivery_latitude: new Prisma.Decimal('55.7520'),
@@ -77,7 +86,7 @@ const baseOrders = [
   {
     id: 'order-2',
     company_id: 'company-1',
-    status: 'assigned',
+    status: OrderStatus.assigned,
     customer_name: 'Bob',
     delivery_address: 'Moscow, Tverskaya 2',
     delivery_latitude: null,
@@ -230,6 +239,31 @@ const persistedRoute = {
   ],
 };
 
+function buildOrderAssignmentRecord(
+  order: (typeof baseOrders)[number],
+  data: Record<string, unknown> = {},
+) {
+  return {
+    ...order,
+    status: (data['status'] as OrderStatus | undefined) ?? order.status,
+    assigned_courier_id:
+      (data['assigned_courier_id'] as string | null | undefined) ??
+      order.assigned_courier_id,
+    assigned_by_user_id:
+      (data['assigned_by_user_id'] as string | null | undefined) ?? null,
+    external_id: null,
+    order_number: null,
+    customer_phone: null,
+    comment: null,
+    time_window_from: null,
+    time_window_to: null,
+    created_by_user_id: null,
+    metadata: null,
+    created_at: new Date('2026-04-17T10:00:00.000Z'),
+    updated_at: new Date('2026-04-17T10:05:00.000Z'),
+  };
+}
+
 describe('RoutingService', () => {
   let service: RoutingService;
 
@@ -250,6 +284,22 @@ describe('RoutingService', () => {
       longitude: 37.615,
     });
     mockRoutingProvider.buildRoute.mockResolvedValue(providerRouteResult);
+    mockTransactionClient.order.update.mockImplementation(
+      async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: Record<string, unknown>;
+      }) => {
+        const order =
+          baseOrders.find((item) => item.id === where.id) ?? baseOrders[0];
+
+        return buildOrderAssignmentRecord(order, data);
+      },
+    );
+    mockTransactionClient.orderStatusHistory.create.mockResolvedValue({});
+    mockTransactionClient.auditLog.create.mockResolvedValue({});
     mockEventEmitter.emitAsync.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -328,6 +378,45 @@ describe('RoutingService', () => {
         }),
       ],
     });
+    expect(mockTransactionClient.order.update).toHaveBeenCalledWith({
+      where: { id: 'order-1' },
+      data: {
+        assigned_courier_id: 'courier-1',
+        assigned_by_user_id: 'user-1',
+        status: OrderStatus.assigned,
+      },
+      select: expect.any(Object),
+    });
+    expect(mockTransactionClient.order.update).toHaveBeenCalledWith({
+      where: { id: 'order-2' },
+      data: {
+        assigned_courier_id: 'courier-1',
+        assigned_by_user_id: 'user-1',
+      },
+      select: expect.any(Object),
+    });
+    expect(mockTransactionClient.orderStatusHistory.create).toHaveBeenCalledWith(
+      {
+        data: expect.objectContaining({
+          company_id: 'company-1',
+          order_id: 'order-1',
+          from_status: OrderStatus.confirmed,
+          to_status: OrderStatus.assigned,
+          changed_by_user_id: 'user-1',
+          reason: 'Assigned to route courier',
+        }),
+      },
+    );
+    expect(mockTransactionClient.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        company_id: 'company-1',
+        actor_id: 'user-1',
+        actor_role: AuditActorRole.system,
+        action: DOMAIN_EVENTS.ORDER.STATUS_CHANGED,
+        entity_type: 'order',
+        entity_id: 'order-1',
+      }),
+    });
     expect(result.status).toBe(RouteStatus.draft);
     expect(result.totalDistanceMeters).toBe(1800);
     expect(result.routePoints).toHaveLength(2);
@@ -344,6 +433,72 @@ describe('RoutingService', () => {
         }),
       }),
     );
+    expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+      DOMAIN_EVENTS.ORDER.STATUS_CHANGED,
+      expect.objectContaining({
+        orderId: 'order-1',
+        companyId: 'company-1',
+        actorUserId: 'user-1',
+        actorRole: AuditActorRole.system,
+        fromStatus: OrderStatus.confirmed,
+        toStatus: OrderStatus.assigned,
+        reason: 'Assigned to route courier',
+        order: expect.objectContaining({
+          id: 'order-1',
+          status: OrderStatus.assigned,
+          assignedCourierId: 'courier-1',
+        }),
+      }),
+    );
+  });
+
+  it('does not assign orders when route is built without courier', async () => {
+    mockPrismaService.order.findMany.mockResolvedValue(baseOrders);
+    mockPrismaService.routePoint.findMany.mockResolvedValue([]);
+    mockTransactionClient.route.create.mockResolvedValue({ id: 'route-1' });
+    mockTransactionClient.route.findFirst.mockResolvedValue({
+      ...persistedRoute,
+      courier_id: null,
+    });
+
+    const result = await service.buildRoute('company-1', 'user-1', {
+      orderIds: ['order-1', 'order-2'],
+      routeDate,
+    });
+
+    expect(result.id).toBe('route-1');
+    expect(mockPrismaService.courier.findFirst).not.toHaveBeenCalled();
+    expect(mockTransactionClient.order.update).not.toHaveBeenCalled();
+    expect(
+      mockTransactionClient.orderStatusHistory.create,
+    ).not.toHaveBeenCalled();
+    expect(mockTransactionClient.auditLog.create).not.toHaveBeenCalled();
+    expect(mockEventEmitter.emitAsync).not.toHaveBeenCalledWith(
+      DOMAIN_EVENTS.ORDER.STATUS_CHANGED,
+      expect.anything(),
+    );
+  });
+
+  it('rejects terminal orders before assigning a route courier', async () => {
+    mockPrismaService.order.findMany.mockResolvedValue([
+      {
+        ...baseOrders[0],
+        status: OrderStatus.delivered,
+      },
+      baseOrders[1],
+    ]);
+
+    await expect(
+      service.buildRoute('company-1', 'user-1', {
+        orderIds: ['order-1', 'order-2'],
+        courierId: 'courier-1',
+        routeDate,
+      }),
+    ).rejects.toThrow(
+      'Order order-1 has terminal status and cannot be routed',
+    );
+
+    expect(mockTransactionClient.order.update).not.toHaveBeenCalled();
   });
 
   it('lists routes with Prisma filters', async () => {
@@ -447,6 +602,27 @@ describe('RoutingService', () => {
         }),
       ],
     });
+    expect(mockTransactionClient.order.update).toHaveBeenCalledTimes(2);
+    expect(mockTransactionClient.order.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'order-2' },
+      data: {
+        assigned_courier_id: 'courier-1',
+        assigned_by_user_id: 'user-1',
+      },
+      select: expect.any(Object),
+    });
+    expect(mockTransactionClient.order.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'order-1' },
+      data: {
+        assigned_courier_id: 'courier-1',
+        assigned_by_user_id: 'user-1',
+        status: OrderStatus.assigned,
+      },
+      select: expect.any(Object),
+    });
+    expect(mockTransactionClient.orderStatusHistory.create).toHaveBeenCalledTimes(
+      1,
+    );
     expect(result.status).toBe(RouteStatus.planned);
     expect(result.version).toBe(2);
     expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
