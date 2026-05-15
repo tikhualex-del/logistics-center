@@ -6,7 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AuditActorRole, OrderStatus, Prisma, RouteStatus } from '@prisma/client';
+import {
+  AuditActorRole,
+  OrderStatus,
+  Prisma,
+  RouteStatus,
+} from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { stringifyUnknown } from '../../common/utils/stringify-unknown';
@@ -192,16 +197,15 @@ export class RoutingService {
           ),
         });
 
-        const orderStatusChangedEvents =
-          await this.syncRouteOrdersWithCourier({
-            tx,
-            companyId,
-            actorUserId,
-            actorRole,
-            routeId: createdRoute.id,
-            courierId: dto.courierId ?? null,
-            orders: resolvedPlan.orders,
-          });
+        const orderStatusChangedEvents = await this.syncRouteOrdersWithCourier({
+          tx,
+          companyId,
+          actorUserId,
+          actorRole,
+          routeId: createdRoute.id,
+          courierId: dto.courierId ?? null,
+          orders: resolvedPlan.orders,
+        });
 
         const savedRoute = await tx.route.findFirst({
           where: {
@@ -774,7 +778,9 @@ export class RoutingService {
         data: {
           assigned_courier_id: courierId,
           assigned_by_user_id: actorUserId,
-          ...(shouldTransitionToAssigned ? { status: OrderStatus.assigned } : {}),
+          ...(shouldTransitionToAssigned
+            ? { status: OrderStatus.assigned }
+            : {}),
         },
         select: orderForAssignmentSelect,
       });

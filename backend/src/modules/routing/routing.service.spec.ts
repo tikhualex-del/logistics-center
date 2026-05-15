@@ -1,7 +1,12 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { AuditActorRole, OrderStatus, Prisma, RouteStatus } from '@prisma/client';
+import {
+  AuditActorRole,
+  OrderStatus,
+  Prisma,
+  RouteStatus,
+} from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { DOMAIN_EVENTS } from '../../common/events.constants';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -395,18 +400,18 @@ describe('RoutingService', () => {
       },
       select: expect.any(Object),
     });
-    expect(mockTransactionClient.orderStatusHistory.create).toHaveBeenCalledWith(
-      {
-        data: expect.objectContaining({
-          company_id: 'company-1',
-          order_id: 'order-1',
-          from_status: OrderStatus.confirmed,
-          to_status: OrderStatus.assigned,
-          changed_by_user_id: 'user-1',
-          reason: 'Assigned to route courier',
-        }),
-      },
-    );
+    expect(
+      mockTransactionClient.orderStatusHistory.create,
+    ).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        company_id: 'company-1',
+        order_id: 'order-1',
+        from_status: OrderStatus.confirmed,
+        to_status: OrderStatus.assigned,
+        changed_by_user_id: 'user-1',
+        reason: 'Assigned to route courier',
+      }),
+    });
     expect(mockTransactionClient.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         company_id: 'company-1',
@@ -494,9 +499,7 @@ describe('RoutingService', () => {
         courierId: 'courier-1',
         routeDate,
       }),
-    ).rejects.toThrow(
-      'Order order-1 has terminal status and cannot be routed',
-    );
+    ).rejects.toThrow('Order order-1 has terminal status and cannot be routed');
 
     expect(mockTransactionClient.order.update).not.toHaveBeenCalled();
   });
@@ -620,9 +623,9 @@ describe('RoutingService', () => {
       },
       select: expect.any(Object),
     });
-    expect(mockTransactionClient.orderStatusHistory.create).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(
+      mockTransactionClient.orderStatusHistory.create,
+    ).toHaveBeenCalledTimes(1);
     expect(result.status).toBe(RouteStatus.planned);
     expect(result.version).toBe(2);
     expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
