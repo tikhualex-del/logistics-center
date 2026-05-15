@@ -46,7 +46,7 @@ describe('AuthController', () => {
     jest.clearAllMocks();
   });
 
-  it('delegates register to AuthService', async () => {
+  it('sets refresh cookie on register', async () => {
     const dto = {
       email: 'admin@example.com',
       password: 'SecurePass123!',
@@ -54,8 +54,10 @@ describe('AuthController', () => {
       lastName: 'Petrov',
       companyName: 'Fast Delivery',
     };
+    const res = createMockResponse();
     const serviceResult = {
       accessToken: 'access-token',
+      refreshToken: 'refresh-token',
       user: {
         id: 'user-1',
         email: dto.email,
@@ -67,8 +69,18 @@ describe('AuthController', () => {
     };
     mockAuthService.register.mockResolvedValue(serviceResult);
 
-    await expect(controller.register(dto)).resolves.toEqual(serviceResult);
+    const result = await controller.register(dto, res as Response);
+
     expect(mockAuthService.register).toHaveBeenCalledWith(dto);
+    expect(res.cookie).toHaveBeenCalledWith(
+      mockAuthService.refreshCookieName,
+      'refresh-token',
+      mockAuthService.refreshCookieOptions,
+    );
+    expect(result).toEqual({
+      accessToken: 'access-token',
+      user: expect.objectContaining({ email: dto.email }),
+    });
   });
 
   it('sets refresh cookie on login', async () => {

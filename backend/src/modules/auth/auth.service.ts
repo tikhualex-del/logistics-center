@@ -31,7 +31,7 @@ import {
   PlatformTokenResponseDto,
 } from './dto/platform-token-response.dto';
 import { RegisterDto } from './dto/register.dto';
-import { AuthUserDto, TokenResponseDto } from './dto/token-response.dto';
+import { AuthUserDto } from './dto/token-response.dto';
 
 export interface JwtPayload {
   sub: string;
@@ -54,6 +54,11 @@ const IMPERSONATION_ACCESS_TOKEN_TTL = '1h';
 const IMPERSONATION_ACCESS_TOKEN_MAX_AGE_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL = '30d';
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const LOGIN_BLOCKED_COMPANY_STATUSES = new Set<CompanyStatus>([
+  CompanyStatus.inactive,
+  CompanyStatus.suspended,
+  CompanyStatus.archived,
+]);
 
 // Prisma Json field: use Prisma.JsonNull for SQL NULL in a Json column
 const JSON_NULL = Prisma.JsonNull;
@@ -103,7 +108,9 @@ export class AuthService {
   // Register: создать компанию + admin пользователя
   // ----------------------------------------------------------------
 
-  async register(dto: RegisterDto): Promise<TokenResponseDto> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ accessToken: string; refreshToken: string; user: AuthUserDto }> {
     // Поиск существующего email выполняется без tenant-контекста (регистрация публичная)
     const existing = await this.prisma.runWithoutTenant(async () => {
       return this.prisma.user.findFirst({ where: { email: dto.email } });
@@ -170,9 +177,14 @@ export class AuthService {
       user.role,
       user.email,
     );
+    const { refreshToken } = this.generateRefreshToken(
+      user.id,
+      user.company_id,
+    );
 
     return {
       accessToken,
+      refreshToken,
       user: mapToAuthUser(user),
     };
   }
@@ -186,7 +198,10 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string; user: AuthUserDto }> {
     // Поиск по email без tenant-контекста (публичный endpoint)
     const user = await this.prisma.runWithoutTenant(async () => {
-      return this.prisma.user.findFirst({ where: { email: dto.email } });
+      return this.prisma.user.findFirst({
+        where: { email: dto.email },
+        include: { company: { select: { status: true } } },
+      });
     });
 
     if (!user) {
@@ -195,6 +210,10 @@ export class AuthService {
 
     if (!user.is_active) {
       throw new UnauthorizedException('Account is disabled');
+    }
+
+    if (LOGIN_BLOCKED_COMPANY_STATUSES.has(user.company.status)) {
+      throw new UnauthorizedException('Company is not active');
     }
 
     if (!user.password_hash) {

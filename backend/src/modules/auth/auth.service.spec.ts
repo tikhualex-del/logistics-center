@@ -2,6 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CompanyStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -20,6 +21,9 @@ const mockUser = {
   role: 'admin',
   is_active: true,
   password_hash: null as string | null,
+  company: {
+    status: CompanyStatus.active,
+  },
 };
 
 const mockPrismaService = {
@@ -121,7 +125,7 @@ describe('AuthService', () => {
       companyName: 'LLC Fast Delivery',
     };
 
-    it('should register a new user and return access token', async () => {
+    it('should register a new user and return token pair', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue(null);
 
       const createdUser = { ...mockUser, email: registerDto.email };
@@ -141,14 +145,18 @@ describe('AuthService', () => {
         },
       );
 
-      mockJwtService.sign.mockReturnValue('access-token-123');
+      mockJwtService.sign
+        .mockReturnValueOnce('access-token-123')
+        .mockReturnValueOnce('refresh-token-123');
 
       const result = await service.register(registerDto);
 
       expect(result.accessToken).toBe('access-token-123');
+      expect(result.refreshToken).toBe('refresh-token-123');
       expect(result.user.email).toBe(registerDto.email);
       expect(result.user.role).toBe('admin');
-      expect(mockJwtService.sign).toHaveBeenCalledWith(
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
         {
           sub: createdUser.id,
           companyId: createdUser.company_id,
@@ -158,6 +166,17 @@ describe('AuthService', () => {
         {
           secret: 'test-jwt-secret',
           expiresIn: '15m',
+        },
+      );
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        {
+          sub: createdUser.id,
+          companyId: createdUser.company_id,
+        },
+        {
+          secret: 'test-refresh-secret',
+          expiresIn: '30d',
         },
       );
     });
@@ -240,6 +259,24 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
     });
+
+    it.each([
+      CompanyStatus.inactive,
+      CompanyStatus.suspended,
+      CompanyStatus.archived,
+    ])(
+      'should throw UnauthorizedException if company is %s',
+      async (status) => {
+        mockPrismaService.user.findFirst.mockResolvedValue({
+          ...mockUser,
+          company: { status },
+        });
+
+        await expect(service.login(loginDto)).rejects.toThrow(
+          UnauthorizedException,
+        );
+      },
+    );
 
     it('should throw UnauthorizedException on wrong password', async () => {
       mockPrismaService.user.findFirst.mockResolvedValue({ ...mockUser });

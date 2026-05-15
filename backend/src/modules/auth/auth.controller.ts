@@ -55,12 +55,24 @@ export class AuthController {
   @ApiOperation({
     summary: 'Register a new company and admin user',
     description:
-      'Creates a new company and its first admin user. Returns an access token.',
+      'Creates a new company and its first admin user. Returns an access token and sets refresh token as an httpOnly cookie.',
   })
   @ApiResponse({ status: 201, type: TokenResponseDto })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(@Body() dto: RegisterDto): Promise<TokenResponseDto> {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<TokenResponseDto> {
+    const { accessToken, refreshToken, user } =
+      await this.authService.register(dto);
+
+    res.cookie(
+      this.authService.refreshCookieName,
+      refreshToken,
+      this.authService.refreshCookieOptions,
+    );
+
+    return { accessToken, user };
   }
 
   // ----------------------------------------------------------------
