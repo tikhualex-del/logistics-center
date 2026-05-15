@@ -23,6 +23,7 @@ import type {
 } from './orders.events';
 
 const JSON_NULL = Prisma.JsonNull;
+const TIME_ONLY_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const orderSelect = {
   id: true,
@@ -128,7 +129,8 @@ export class OrdersService {
     filters: ListOrdersQueryDto,
   ): Promise<OrderResponseDto[]> {
     return await this.prisma.runWithTenant(companyId, async () => {
-      const where: Prisma.OrderWhereInput = {};
+      const where: Prisma.OrderWhereInput = { company_id: companyId };
+      const andFilters: Prisma.OrderWhereInput[] = [];
 
       if (filters.status) {
         where.status = filters.status;
@@ -144,6 +146,26 @@ export class OrdersService {
           gte: start,
           lt: end,
         };
+      }
+
+      if (filters.search) {
+        where.OR = [
+          { external_id: { contains: filters.search, mode: 'insensitive' } },
+          { order_number: { contains: filters.search, mode: 'insensitive' } },
+          { customer_name: { contains: filters.search, mode: 'insensitive' } },
+          { customer_phone: { contains: filters.search, mode: 'insensitive' } },
+          {
+            delivery_address: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        ];
+      }
+
+      andFilters.push(...buildTimeWindowOverlapFilters(filters));
+      if (andFilters.length > 0) {
+        where.AND = andFilters;
       }
 
       const orders = await this.prisma.order.findMany({
@@ -518,6 +540,63 @@ function buildDateRange(date: string): { start: Date; end: Date } {
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
   return { start, end };
+}
+
+function buildTimeWindowOverlapFilters(
+  filters: ListOrdersQueryDto,
+): Prisma.OrderWhereInput[] {
+  const filterFrom = filters.timeWindowFrom
+    ? parseListTimeWindow(filters.timeWindowFrom, filters.date)
+    : null;
+  const filterTo = filters.timeWindowTo
+    ? parseListTimeWindow(filters.timeWindowTo, filters.date)
+    : null;
+
+  if (!filterFrom && !filterTo) {
+    return [];
+  }
+
+  if (filterFrom && filterTo && filterFrom > filterTo) {
+    throw new BadRequestException(
+      'timeWindowFrom must be earlier than or equal to timeWindowTo',
+    );
+  }
+
+  const where: Prisma.OrderWhereInput[] = [];
+
+  if (filterTo) {
+    where.push({ time_window_from: { lt: filterTo } });
+  }
+
+  if (filterFrom) {
+    where.push({ time_window_to: { gt: filterFrom } });
+  }
+
+  return where;
+}
+
+function parseListTimeWindow(value: string, selectedDate?: string): Date {
+  const normalized = value.trim();
+
+  if (TIME_ONLY_PATTERN.test(normalized)) {
+    if (!selectedDate) {
+      throw new BadRequestException(
+        'date is required when timeWindow filters use HH:mm format',
+      );
+    }
+
+    return new Date(`${selectedDate}T${normalized}:00.000Z`);
+  }
+
+  const timestamp = Date.parse(normalized);
+
+  if (Number.isNaN(timestamp)) {
+    throw new BadRequestException(
+      'timeWindow filters must use HH:mm or a valid date-time value',
+    );
+  }
+
+  return new Date(timestamp);
 }
 
 function toDecimal(

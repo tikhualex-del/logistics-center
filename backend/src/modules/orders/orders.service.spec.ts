@@ -155,6 +155,7 @@ describe('OrdersService', () => {
 
     expect(mockPrismaService.order.findMany).toHaveBeenCalledWith({
       where: {
+        company_id: 'company-1',
         status: OrderStatus.new,
         zone_id: 'zone-1',
         scheduled_date: {
@@ -167,6 +168,87 @@ describe('OrdersService', () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0]?.deliveryLatitude).toBeCloseTo(55.7558);
+  });
+
+  it('lists orders with search across order identity and customer fields', async () => {
+    mockPrismaService.order.findMany.mockResolvedValue([baseOrder]);
+
+    await service.listOrders('company-1', {
+      search: 'Petrov',
+    });
+
+    expect(mockPrismaService.order.findMany).toHaveBeenCalledWith({
+      where: {
+        company_id: 'company-1',
+        OR: [
+          { external_id: { contains: 'Petrov', mode: 'insensitive' } },
+          { order_number: { contains: 'Petrov', mode: 'insensitive' } },
+          { customer_name: { contains: 'Petrov', mode: 'insensitive' } },
+          { customer_phone: { contains: 'Petrov', mode: 'insensitive' } },
+          {
+            delivery_address: {
+              contains: 'Petrov',
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      orderBy: { created_at: 'desc' },
+      select: expect.any(Object),
+    });
+  });
+
+  it('lists orders whose delivery window overlaps the selected time range', async () => {
+    mockPrismaService.order.findMany.mockResolvedValue([baseOrder]);
+
+    await service.listOrders('company-1', {
+      date: '2026-04-16',
+      timeWindowFrom: '09:00',
+      timeWindowTo: '13:00',
+    });
+
+    expect(mockPrismaService.order.findMany).toHaveBeenCalledWith({
+      where: {
+        company_id: 'company-1',
+        scheduled_date: {
+          gte: new Date('2026-04-16'),
+          lt: new Date('2026-04-17'),
+        },
+        AND: [
+          {
+            time_window_from: {
+              lt: new Date('2026-04-16T13:00:00.000Z'),
+            },
+          },
+          {
+            time_window_to: {
+              gt: new Date('2026-04-16T09:00:00.000Z'),
+            },
+          },
+        ],
+      },
+      orderBy: { created_at: 'desc' },
+      select: expect.any(Object),
+    });
+  });
+
+  it('rejects HH:mm time window filters without selected date', async () => {
+    await expect(
+      service.listOrders('company-1', {
+        timeWindowFrom: '09:00',
+        timeWindowTo: '13:00',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects inverted list time window filters', async () => {
+    await expect(
+      service.listOrders('company-1', {
+        date: '2026-04-16',
+        timeWindowFrom: '14:00',
+        timeWindowTo: '13:00',
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('returns order by id inside tenant scope', async () => {

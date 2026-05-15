@@ -1,7 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { IsDateString, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class ListOrdersQueryDto {
   @ApiPropertyOptional({ enum: OrderStatus })
@@ -27,4 +34,52 @@ export class ListOrdersQueryDto {
   @IsOptional()
   @IsUUID()
   declare zoneId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Ivan',
+    description:
+      'Search by external id, order number, customer name, customer phone, or delivery address',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    normalizeOptionalQueryString(value),
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  declare search?: string;
+
+  @ApiPropertyOptional({
+    example: '09:00',
+    description:
+      'Delivery window filter start. Accepts HH:mm with date, or full date-time.',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    normalizeOptionalQueryString(value),
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  declare timeWindowFrom?: string;
+
+  @ApiPropertyOptional({
+    example: '13:00',
+    description:
+      'Delivery window filter end. Accepts HH:mm with date, or full date-time.',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    normalizeOptionalQueryString(value),
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  declare timeWindowTo?: string;
+}
+
+function normalizeOptionalQueryString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return value as string | undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized === '' ? undefined : normalized;
 }

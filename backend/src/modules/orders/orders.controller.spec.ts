@@ -72,6 +72,9 @@ describe('OrdersController', () => {
       status: OrderStatus.new,
       zoneId: 'zone-1',
       date: '2026-04-16',
+      search: 'Ivan',
+      timeWindowFrom: '09:00',
+      timeWindowTo: '13:00',
     };
     mockOrdersService.listOrders.mockResolvedValue([orderResponse]);
 
