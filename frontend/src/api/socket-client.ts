@@ -3,6 +3,8 @@ import { WS_URL } from '@/lib/constants'
 import type { CourierStatus } from './couriers.api'
 import type { OrderStatus } from './orders.api'
 
+export const REALTIME_NAMESPACE = '/realtime'
+
 /**
  * WebSocket event names (per CLAUDE.md Section 16).
  * These match the server-side Socket.io event names exactly.
@@ -70,7 +72,7 @@ let socketInstance: Socket | null = null
 
 export function getSocket(): Socket {
   if (!socketInstance) {
-    socketInstance = io(WS_URL, {
+    socketInstance = io(buildRealtimeSocketUrl(WS_URL), {
       autoConnect: false, // connect only after authentication
       auth: (cb) => {
         const token = localStorage.getItem('access_token')
@@ -89,4 +91,12 @@ export function disconnectSocket(): void {
     socketInstance.disconnect()
   }
   socketInstance = null
+}
+
+export function buildRealtimeSocketUrl(baseUrl: string): string {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
+
+  return normalizedBaseUrl.endsWith(REALTIME_NAMESPACE)
+    ? normalizedBaseUrl
+    : `${normalizedBaseUrl}${REALTIME_NAMESPACE}`
 }
