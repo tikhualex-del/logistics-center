@@ -20,20 +20,9 @@ import { DeadlineBadge, SlaSummaryWidget } from '@/features/sla'
 import { cn } from '@/lib/utils'
 import { getStatusLabel } from '@/lib/order-utils'
 import { useUiStore } from '@/store'
+import { NEXT_ORDER_STATUSES } from './order-status-transitions'
 
 const EMPTY_ORDERS: readonly Order[] = []
-const NEXT_ORDER_STATUSES: Record<OrderStatus, readonly OrderStatus[]> = {
-  new: ['confirmed', 'cancelled'],
-  confirmed: ['assigned', 'cancelled'],
-  assigned: ['handed_over', 'cancelled'],
-  handed_over: ['in_transit', 'returned'],
-  in_transit: ['delivered', 'undelivered', 'returned'],
-  delivered: [],
-  undelivered: [],
-  returned: [],
-  cancelled: [],
-}
-
 const STATUS_STYLES: Record<OrderStatus, string> = {
   new: 'bg-slate-500/10 text-slate-700 ring-slate-500/20',
   confirmed: 'bg-sky-500/10 text-sky-700 ring-sky-500/20',
